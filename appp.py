@@ -22,7 +22,7 @@ st.markdown(
 # =======================
 # Load Dataset
 # =======================
-file_path = r"C:\Users\anand\Downloads\data.csv"
+file_path = r""C:\Users\anand\Downloads\spotify-dashboard\data.csv""
 df = pd.read_csv(file_path)
 
 # Ensure release_date is datetime
