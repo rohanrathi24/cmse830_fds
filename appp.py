@@ -32,7 +32,10 @@ if len(uploaded_files) > 2:
 dfs = []
 for file in uploaded_files:
     try:
-        dfs.append(pd.read_csv(file))
+        temp_df = pd.read_csv(file)
+        # Drop index-like columns if they exist
+        temp_df = temp_df.loc[:, ~temp_df.columns.str.contains('^Unnamed')]
+        dfs.append(temp_df)
     except Exception as e:
         st.error(f"Error reading {file.name}: {e}")
 
