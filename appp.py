@@ -7,13 +7,14 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from scipy.stats import zscore
 
 st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="wide")
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
 Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, 
-and new **interactive dataset overview, filters, and visuals**.
+and advanced features like **Feature Importance, Outlier Detection, and Regression Analysis**.
 """)
 
 st.sidebar.header("📂 Upload CSV Files")
@@ -114,16 +115,6 @@ if len(cat_cols) > 0:
     cat_imputer = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None)
     df[cat_cols] = cat_imputer.fit_transform(df[cat_cols])
 
-with st.expander("📉 Missing Values Comparison Before vs After"):
-    plt.figure(figsize=(10, 4))
-    sns.barplot(x=missing_counts.index, y=missing_counts.values, color="coral", label="Before")
-    sns.barplot(x=missing_counts.index, y=df.isnull().sum().values, color="skyblue", label="After")
-    plt.xticks(rotation=90)
-    plt.title("Missing Values Before vs After Imputation")
-    plt.legend()
-    st.pyplot(plt)
-    plt.clf()
-
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -131,98 +122,49 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-with st.expander("📊 Statistical Exploration", expanded=True):
-    num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-    cat_cols = df.select_dtypes(include=['object', 'string']).columns.tolist()
+st.header("📊 Statistical & Advanced Exploration")
 
-    if len(num_cols) > 0:
-        st.subheader("📈 Explore a Numerical Feature")
-        selected_num = st.selectbox("Select a numerical column", num_cols)
-        stats = df[selected_num].describe()
+num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+if len(num_cols) > 0:
+    st.subheader("📈 Explore a Numerical Feature")
+    selected_num = st.selectbox("Select a numerical column", num_cols)
+    stats = df[selected_num].describe()
+    col1, col2, col3 = st.columns(3)
+    with col1:
         st.metric("Mean", f"{stats['mean']:.2f}")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Median", f"{df[selected_num].median():.2f}")
-        with col2:
-            st.metric("Std. Dev.", f"{stats['std']:.2f}")
-        with col3:
-            st.metric("Skewness", f"{df[selected_num].skew():.2f}")
-        col1, col2 = st.columns(2)
-        with col1:
-            plt.figure(figsize=(5, 4))
-            sns.histplot(df[selected_num], kde=True, color="coral")
-            plt.title(f"Distribution of {selected_num}")
-            st.pyplot(plt)
-            plt.clf()
-        with col2:
-            plt.figure(figsize=(5, 4))
-            sns.boxplot(x=df[selected_num], color="skyblue")
-            plt.title(f"Boxplot of {selected_num}")
-            st.pyplot(plt)
-            plt.clf()
-
-    if len(num_cols) >= 2:
-        st.subheader("🔗 Explore Correlations")
-        col_x = st.selectbox("Select X feature", num_cols, index=0)
-        col_y = st.selectbox("Select Y feature", num_cols, index=1)
-        corr_val = df[[col_x, col_y]].corr().iloc[0, 1]
-        st.write(f"Correlation between **{col_x}** and **{col_y}**: `{corr_val:.3f}`")
-        plt.figure(figsize=(6, 5))
-        sns.scatterplot(x=df[col_x], y=df[col_y], color="teal", alpha=0.7)
-        plt.title(f"{col_y} vs {col_x}")
-        plt.grid(True)
-        st.pyplot(plt)
-        plt.clf()
-
-    if len(cat_cols) > 0:
-        st.subheader("🧩 Categorical Feature Summary")
-        selected_cat = st.selectbox("Select a categorical column", cat_cols)
-        top_values = df[selected_cat].value_counts().head(10)
-        st.bar_chart(top_values)
-
-st.sidebar.header("🎚️ Interactive Filters")
-
-if 'release_year' in df.columns:
-    years = sorted(df['release_year'].dropna().unique())
-    year_range = st.sidebar.slider("Select Year Range", int(min(years)), int(max(years)), (int(min(years)), int(max(years))))
-    df = df[(df['release_year'] >= year_range[0]) & (df['release_year'] <= year_range[1])]
-
-if 'popularity' in df.columns:
-    pop_min, pop_max = int(df['popularity'].min()), int(df['popularity'].max())
-    pop_range = st.sidebar.slider("Popularity Range", pop_min, pop_max, (pop_min, pop_max))
-    df = df[(df['popularity'] >= pop_range[0]) & (df['popularity'] <= pop_range[1])]
-
-if 'artists' in df.columns:
-    top_artists = df['artists'].value_counts().head(20).index.tolist()
-    selected_artist = st.sidebar.selectbox("Filter by Artist (optional)", ["All"] + top_artists)
-    if selected_artist != "All":
-        df = df[df['artists'] == selected_artist]
-
-st.sidebar.button("🔄 Reset Filters")
-
-st.header("🎨 Interactive Exploratory Data Analysis")
-
-num_data_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-if len(num_data_cols) >= 2:
-    st.subheader("📊 Custom Scatter Plot")
-    x_axis = st.selectbox("Select X-axis", num_data_cols, index=0)
-    y_axis = st.selectbox("Select Y-axis", num_data_cols, index=1)
-    color_col = st.selectbox("Color By (optional)", ["None"] + num_data_cols)
-    plt.figure(figsize=(8, 5))
-    if color_col != "None":
-        sns.scatterplot(data=df, x=x_axis, y=y_axis, hue=color_col, palette='viridis', s=60)
-    else:
-        sns.scatterplot(data=df, x=x_axis, y=y_axis, color='royalblue', s=60)
-    plt.title(f"{y_axis} vs {x_axis}")
-    plt.grid(True)
+    with col2:
+        st.metric("Median", f"{df[selected_num].median():.2f}")
+    with col3:
+        st.metric("Std. Dev.", f"{stats['std']:.2f}")
+    plt.figure(figsize=(5, 4))
+    sns.histplot(df[selected_num], kde=True, color="coral")
+    plt.title(f"Distribution of {selected_num}")
     st.pyplot(plt)
     plt.clf()
 
-if 'artists' in df.columns:
-    top_n = st.slider("Number of Top Artists to Display", 5, 20, 10)
-    st.subheader(f"🎤 Top {top_n} Artists")
-    top_artists_df = df['artists'].value_counts().head(top_n)
-    st.bar_chart(top_artists_df)
+st.subheader("🚨 Outlier Detection")
+if len(num_cols) > 0:
+    selected_outlier_feature = st.selectbox("Select feature for outlier detection", num_cols)
+    q1 = df[selected_outlier_feature].quantile(0.25)
+    q3 = df[selected_outlier_feature].quantile(0.75)
+    iqr = q3 - q1
+    outliers = df[(df[selected_outlier_feature] < q1 - 1.5 * iqr) | (df[selected_outlier_feature] > q3 + 1.5 * iqr)]
+    st.write(f"Found **{outliers.shape[0]}** outliers in **{selected_outlier_feature}**")
+    plt.figure(figsize=(6, 4))
+    sns.boxplot(x=df[selected_outlier_feature], color='lightblue')
+    plt.title(f"Outliers in {selected_outlier_feature}")
+    st.pyplot(plt)
+    plt.clf()
+
+st.subheader("📉 Linear Relationship Explorer")
+if len(num_cols) >= 2:
+    x_col = st.selectbox("Select X feature", num_cols)
+    y_col = st.selectbox("Select Y feature", num_cols)
+    sns.lmplot(x=x_col, y=y_col, data=df, height=5, aspect=1.5, scatter_kws={'alpha':0.6})
+    plt.title(f"Regression Fit: {y_col} vs {x_col}")
+    st.pyplot(plt)
+    plt.clf()
 
 st.header("📈 Correlation and PCA Clustering")
 
@@ -255,11 +197,16 @@ if len(pca_cols) >= 2:
     plt.clf()
     st.write("Explained variance ratio:", pca.explained_variance_ratio_.round(3))
 
+    loadings = pd.DataFrame(pca.components_.T, columns=['PC1', 'PC2'], index=pca_cols)
+    st.subheader("🔍 Feature Contributions to PCA Components")
+    st.dataframe(loadings.round(3))
+
 df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Project Completed — CMSE 830 Midterm Interactive Version")
+st.success("✅ Project Completed — CMSE 830 Midterm Advanced Version")
+
 
 
 
