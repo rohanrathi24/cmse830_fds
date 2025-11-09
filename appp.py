@@ -12,7 +12,7 @@ st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, and **interactive statistical summaries & filters**.
+Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, and new **interactive dataset overview, filters, and visuals**.
 """)
 
 st.sidebar.header("📂 Upload CSV Files")
@@ -40,15 +40,39 @@ for file in uploaded_files:
 
 df = pd.concat(dfs, ignore_index=True)
 
-with st.expander("📄 Dataset Preview & Info", expanded=True):
-    st.dataframe(df.head())
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Rows", df.shape[0])
-    with col2:
-        st.metric("Columns", df.shape[1])
-    st.write("Missing Values Summary:")
-    st.dataframe(df.isnull().sum().sort_values(ascending=False).head(20))
+with st.expander("📄 Dataset Overview", expanded=True):
+    st.subheader("🧭 Dataset Overview")
+
+    st.metric("Rows", df.shape[0])
+    st.metric("Columns", df.shape[1])
+
+    all_columns = df.columns.tolist()
+    search_term = st.text_input("🔍 Search or filter columns", "")
+
+    if search_term:
+        filtered_cols = [c for c in all_columns if search_term.lower() in c.lower()]
+    else:
+        filtered_cols = all_columns
+
+    st.write(f"Showing {len(filtered_cols)} of {len(all_columns)} columns:")
+
+    selected_cols = st.multiselect("Select columns to view sample data", filtered_cols, default=filtered_cols[:5])
+    st.dataframe(df[selected_cols].head(10))
+
+    col_info = pd.DataFrame({
+        "Data Type": df.dtypes.astype(str),
+        "Missing Values": df.isnull().sum(),
+        "Unique Values": df.nunique()
+    })
+    st.write("📊 Column Metadata")
+    st.dataframe(col_info.loc[filtered_cols])
+
+    data_type_counts = df.dtypes.value_counts()
+    plt.figure(figsize=(5, 5))
+    plt.pie(data_type_counts, labels=data_type_counts.index, autopct="%1.1f%%", startangle=140)
+    plt.title("Distribution of Data Types")
+    st.pyplot(plt)
+    plt.clf()
 
 st.sidebar.header("🧹 Data Cleaning")
 
@@ -86,11 +110,7 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-with st.expander("📊 Cleaned Data & Statistical Exploration", expanded=True):
-    st.subheader("Dataset Overview")
-    st.write("Shape after cleaning:", df.shape)
-    st.write("Columns:", list(df.columns))
-
+with st.expander("📊 Statistical Exploration", expanded=True):
     num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
     cat_cols = df.select_dtypes(include=['object', 'string']).columns.tolist()
 
@@ -218,5 +238,6 @@ df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("CMSE 830 Midterm Interactive Version")
+st.success("✅ Project Completed — CMSE 830 Midterm Interactive Version")
+
 
