@@ -105,7 +105,7 @@ if len(num_cols) > 0:
     df[num_cols] = num_imputer.fit_transform(df[num_cols])
     after_num_missing = df[num_cols].isnull().sum().sum()
 
-    st.info(f"Filled {before_num_missing - after_num_missing} missing numeric values using '{numeric_strategy}' strategy.")
+    
 
 if len(cat_cols) > 0:
     st.subheader("🧩 Categorical Imputation")
@@ -116,7 +116,7 @@ if len(cat_cols) > 0:
     df[cat_cols] = cat_imputer.fit_transform(df[cat_cols])
     after_cat_missing = df[cat_cols].isnull().sum().sum()
 
-    st.info(f"Filled {before_cat_missing - after_cat_missing} missing categorical values using '{cat_strategy}' strategy.")
+    
 
 with st.expander("📉 Missing Values Comparison Before vs After"):
     plt.figure(figsize=(10, 4))
