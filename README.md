@@ -1,6 +1,3 @@
-========================================
-🎵 Spotify Data Exploration Dashboard
-========================================
 
 Overview:
 ---------
@@ -9,7 +6,6 @@ It provides visualizations, summary statistics, and feature distributions.
 The dashboard includes a sidebar filter to select songs and updates charts dynamically.
 
 Features:
----------
 1. Dataset preview (first 5 rows).
 2. Dataset info: number of rows, columns, numerical/categorical columns, missing values.
 3. Top 10 Artists and Top 10 Songs by count.
