@@ -42,18 +42,12 @@ df = pd.concat(dfs, ignore_index=True)
 
 with st.expander("📄 Dataset Overview", expanded=True):
     st.subheader("🧭 Dataset Overview")
-
     st.metric("Rows", df.shape[0])
     st.metric("Columns", df.shape[1])
 
     all_columns = df.columns.tolist()
     search_term = st.text_input("🔍 Search or filter columns", "")
-
-    if search_term:
-        filtered_cols = [c for c in all_columns if search_term.lower() in c.lower()]
-    else:
-        filtered_cols = all_columns
-
+    filtered_cols = [c for c in all_columns if search_term.lower() in c.lower()] if search_term else all_columns
     st.write(f"Showing {len(filtered_cols)} of {len(all_columns)} columns:")
 
     selected_cols = st.multiselect("Select columns to view sample data", filtered_cols, default=filtered_cols[:5])
@@ -94,14 +88,45 @@ st.sidebar.header("🩺 Missing Value Imputation")
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 cat_cols = df.select_dtypes(include=['object', 'string']).columns
 
-num_imputer = SimpleImputer(strategy='mean')
-cat_imputer = SimpleImputer(strategy='most_frequent')
+with st.expander("🔍 Missing Data Overview", expanded=True):
+    missing_counts = df.isnull().sum()
+    missing_percent = (missing_counts / len(df) * 100).round(2)
+    missing_df = pd.DataFrame({"Missing Values": missing_counts, "Missing (%)": missing_percent})
+    st.dataframe(missing_df[missing_df["Missing Values"] > 0].sort_values("Missing Values", ascending=False))
+    if missing_df["Missing Values"].sum() == 0:
+        st.success("✅ No missing values found!")
 
 if len(num_cols) > 0:
+    st.subheader("⚙️ Numeric Imputation")
+    numeric_strategy = st.selectbox("Select strategy for numeric columns", ["mean", "median", "most_frequent"])
+    num_imputer = SimpleImputer(strategy=numeric_strategy)
+
+    before_num_missing = df[num_cols].isnull().sum().sum()
     df[num_cols] = num_imputer.fit_transform(df[num_cols])
+    after_num_missing = df[num_cols].isnull().sum().sum()
+
+    st.info(f"Filled {before_num_missing - after_num_missing} missing numeric values using '{numeric_strategy}' strategy.")
 
 if len(cat_cols) > 0:
+    st.subheader("🧩 Categorical Imputation")
+    cat_strategy = st.selectbox("Select strategy for categorical columns", ["most_frequent", "constant"])
+    cat_imputer = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None)
+
+    before_cat_missing = df[cat_cols].isnull().sum().sum()
     df[cat_cols] = cat_imputer.fit_transform(df[cat_cols])
+    after_cat_missing = df[cat_cols].isnull().sum().sum()
+
+    st.info(f"Filled {before_cat_missing - after_cat_missing} missing categorical values using '{cat_strategy}' strategy.")
+
+with st.expander("📉 Missing Values Comparison Before vs After"):
+    plt.figure(figsize=(10, 4))
+    sns.barplot(x=missing_counts.index, y=missing_counts.values, color="coral", label="Before")
+    sns.barplot(x=missing_counts.index, y=df.isnull().sum().values, color="skyblue", label="After")
+    plt.xticks(rotation=90)
+    plt.title("Missing Values Before vs After Imputation")
+    plt.legend()
+    st.pyplot(plt)
+    plt.clf()
 
 for col in cat_cols:
     if df[col].nunique() <= 10:
@@ -239,5 +264,6 @@ csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
 st.success("✅ Project Completed — CMSE 830 Midterm Interactive Version")
+
 
 
