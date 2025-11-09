@@ -12,7 +12,8 @@ st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, and new **interactive dataset overview, filters, and visuals**.
+Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, 
+and new **interactive dataset overview, filters, and visuals**.
 """)
 
 st.sidebar.header("📂 Upload CSV Files")
@@ -74,6 +75,11 @@ if 'release_date' in df.columns:
     df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
     df['release_year'] = df['release_date'].dt.year
 
+    missing_dates = df['release_date'].isna().sum()
+    if missing_dates > 0:
+        most_common_year = int(df['release_date'].dt.year.mode()[0])
+        df['release_date'] = df['release_date'].fillna(pd.Timestamp(f"{most_common_year}-01-01"))
+
 if st.sidebar.checkbox("Drop duplicates", value=True):
     df = df.drop_duplicates()
 
@@ -100,23 +106,13 @@ if len(num_cols) > 0:
     st.subheader("⚙️ Numeric Imputation")
     numeric_strategy = st.selectbox("Select strategy for numeric columns", ["mean", "median", "most_frequent"])
     num_imputer = SimpleImputer(strategy=numeric_strategy)
-
-    before_num_missing = df[num_cols].isnull().sum().sum()
     df[num_cols] = num_imputer.fit_transform(df[num_cols])
-    after_num_missing = df[num_cols].isnull().sum().sum()
-
-    
 
 if len(cat_cols) > 0:
     st.subheader("🧩 Categorical Imputation")
     cat_strategy = st.selectbox("Select strategy for categorical columns", ["most_frequent", "constant"])
     cat_imputer = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None)
-
-    before_cat_missing = df[cat_cols].isnull().sum().sum()
     df[cat_cols] = cat_imputer.fit_transform(df[cat_cols])
-    after_cat_missing = df[cat_cols].isnull().sum().sum()
-
-    
 
 with st.expander("📉 Missing Values Comparison Before vs After"):
     plt.figure(figsize=(10, 4))
@@ -264,6 +260,7 @@ csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
 st.success("✅ Project Completed — CMSE 830 Midterm Interactive Version")
+
 
 
 
