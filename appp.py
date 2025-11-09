@@ -87,10 +87,39 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-with st.expander("📊 Cleaned Data Summary", expanded=True):
+with st.expander("📊 Cleaned Data & Statistical Summary", expanded=True):
+    st.subheader("Dataset Overview")
     st.write("Shape after cleaning:", df.shape)
-    st.dataframe(df.describe().T)
-    st.dataframe(df.isnull().sum().sort_values(ascending=False).head(10))
+    st.write("Columns:", list(df.columns))
+
+    st.subheader("Descriptive Statistics (Numerical Features)")
+    num_summary = df.describe().T
+    num_summary["median"] = df.median(numeric_only=True)
+    num_summary["skewness"] = df.skew(numeric_only=True)
+    num_summary["kurtosis"] = df.kurtosis(numeric_only=True)
+    st.dataframe(num_summary.round(3))
+
+    st.subheader("Missing Values")
+    st.dataframe(df.isnull().sum().sort_values(ascending=False).to_frame("Missing Count"))
+
+    # Correlation overview
+    num_data = df.select_dtypes(include=['float64', 'int64'])
+    if len(num_data.columns) > 1:
+        corr_matrix = num_data.corr().abs().unstack().sort_values(ascending=False)
+        corr_matrix = corr_matrix[corr_matrix < 1]  # remove self-correlations
+        top_corr = corr_matrix.head(5).reset_index()
+        top_corr.columns = ['Feature 1', 'Feature 2', 'Correlation']
+        st.subheader("Top 5 Most Correlated Feature Pairs")
+        st.dataframe(top_corr)
+
+    # Categorical summary
+    cat_data = df.select_dtypes(include=['object', 'string'])
+    if len(cat_data.columns) > 0:
+        st.subheader("Top Categories (First 5 Values per Column)")
+        for col in cat_data.columns[:5]:  # limit for readability
+            top_vals = cat_data[col].value_counts().head(5)
+            st.write(f"**{col}**:")
+            st.write(top_vals)
 
 st.sidebar.header("🎚️ Interactive Filters")
 
