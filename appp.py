@@ -12,7 +12,7 @@ st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, and new **interactive filters & visuals**.
+Interactive version with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, and **interactive statistical summaries & filters**.
 """)
 
 st.sidebar.header("📂 Upload CSV Files")
@@ -33,7 +33,6 @@ dfs = []
 for file in uploaded_files:
     try:
         temp_df = pd.read_csv(file)
-        # Drop index-like columns if they exist
         temp_df = temp_df.loc[:, ~temp_df.columns.str.contains('^Unnamed')]
         dfs.append(temp_df)
     except Exception as e:
@@ -87,39 +86,58 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-with st.expander("📊 Cleaned Data & Statistical Summary", expanded=True):
+with st.expander("📊 Cleaned Data & Statistical Exploration", expanded=True):
     st.subheader("Dataset Overview")
     st.write("Shape after cleaning:", df.shape)
     st.write("Columns:", list(df.columns))
 
-    st.subheader("Descriptive Statistics (Numerical Features)")
-    num_summary = df.describe().T
-    num_summary["median"] = df.median(numeric_only=True)
-    num_summary["skewness"] = df.skew(numeric_only=True)
-    num_summary["kurtosis"] = df.kurtosis(numeric_only=True)
-    st.dataframe(num_summary.round(3))
+    num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    cat_cols = df.select_dtypes(include=['object', 'string']).columns.tolist()
 
-    st.subheader("Missing Values")
-    st.dataframe(df.isnull().sum().sort_values(ascending=False).to_frame("Missing Count"))
+    if len(num_cols) > 0:
+        st.subheader("📈 Explore a Numerical Feature")
+        selected_num = st.selectbox("Select a numerical column", num_cols)
+        stats = df[selected_num].describe()
+        st.metric("Mean", f"{stats['mean']:.2f}")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Median", f"{df[selected_num].median():.2f}")
+        with col2:
+            st.metric("Std. Dev.", f"{stats['std']:.2f}")
+        with col3:
+            st.metric("Skewness", f"{df[selected_num].skew():.2f}")
+        col1, col2 = st.columns(2)
+        with col1:
+            plt.figure(figsize=(5, 4))
+            sns.histplot(df[selected_num], kde=True, color="coral")
+            plt.title(f"Distribution of {selected_num}")
+            st.pyplot(plt)
+            plt.clf()
+        with col2:
+            plt.figure(figsize=(5, 4))
+            sns.boxplot(x=df[selected_num], color="skyblue")
+            plt.title(f"Boxplot of {selected_num}")
+            st.pyplot(plt)
+            plt.clf()
 
-    # Correlation overview
-    num_data = df.select_dtypes(include=['float64', 'int64'])
-    if len(num_data.columns) > 1:
-        corr_matrix = num_data.corr().abs().unstack().sort_values(ascending=False)
-        corr_matrix = corr_matrix[corr_matrix < 1]  # remove self-correlations
-        top_corr = corr_matrix.head(5).reset_index()
-        top_corr.columns = ['Feature 1', 'Feature 2', 'Correlation']
-        st.subheader("Top 5 Most Correlated Feature Pairs")
-        st.dataframe(top_corr)
+    if len(num_cols) >= 2:
+        st.subheader("🔗 Explore Correlations")
+        col_x = st.selectbox("Select X feature", num_cols, index=0)
+        col_y = st.selectbox("Select Y feature", num_cols, index=1)
+        corr_val = df[[col_x, col_y]].corr().iloc[0, 1]
+        st.write(f"Correlation between **{col_x}** and **{col_y}**: `{corr_val:.3f}`")
+        plt.figure(figsize=(6, 5))
+        sns.scatterplot(x=df[col_x], y=df[col_y], color="teal", alpha=0.7)
+        plt.title(f"{col_y} vs {col_x}")
+        plt.grid(True)
+        st.pyplot(plt)
+        plt.clf()
 
-    # Categorical summary
-    cat_data = df.select_dtypes(include=['object', 'string'])
-    if len(cat_data.columns) > 0:
-        st.subheader("Top Categories (First 5 Values per Column)")
-        for col in cat_data.columns[:5]:  # limit for readability
-            top_vals = cat_data[col].value_counts().head(5)
-            st.write(f"**{col}**:")
-            st.write(top_vals)
+    if len(cat_cols) > 0:
+        st.subheader("🧩 Categorical Feature Summary")
+        selected_cat = st.selectbox("Select a categorical column", cat_cols)
+        top_values = df[selected_cat].value_counts().head(10)
+        st.bar_chart(top_values)
 
 st.sidebar.header("🎚️ Interactive Filters")
 
@@ -200,4 +218,5 @@ df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Project Completed — CMSE 830 Midterm Interactive Version")
+st.success("CMSE 830 Midterm Interactive Version")
+
