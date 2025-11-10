@@ -1,7 +1,3 @@
-# ========================================
-# 🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm
-# ========================================
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -15,9 +11,6 @@ from sklearn.cluster import KMeans
 from sklearn.linear_model import LinearRegression
 from scipy.stats import zscore
 
-# --------------------------------
-# Streamlit Page Setup
-# --------------------------------
 st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="wide")
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
@@ -27,9 +20,6 @@ and **regression analysis** — designed for CMSE 830 Midterm.
 """)
 
 
-# ========================================
-# 🎛️ Sidebar Navigation & Upload
-# ========================================
 with st.sidebar:
     st.markdown("## 🎛️ **Dashboard Controls**")
     st.markdown("---")
@@ -68,9 +58,6 @@ with st.sidebar:
     st.caption("Use the controls above to explore and clean Spotify data interactively.")
 
 
-# ========================================
-# 📂 Load and Merge Files
-# ========================================
 if not uploaded_files:
     st.warning("Please upload at least one CSV file.")
     st.stop()
@@ -86,9 +73,7 @@ for file in uploaded_files[:2]:
 
 df = pd.concat(dfs, ignore_index=True)
 
-# ========================================
-# 📄 Dataset Overview
-# ========================================
+
 with st.expander("📄 Dataset Overview", expanded=True):
     col1, col2 = st.columns(2)
     with col1:
@@ -109,9 +94,6 @@ with st.expander("📄 Dataset Overview", expanded=True):
     st.write("📊 Column Metadata")
     st.dataframe(meta.loc[columns])
 
-# ========================================
-# 🧹 Data Cleaning
-# ========================================
 if "release_date" in df.columns:
     df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
     df["release_year"] = df["release_date"].dt.year
@@ -142,9 +124,7 @@ missing_summary = df.isnull().sum().to_frame("Missing Values")
 st.write("### 🔍 Missing Value Overview")
 st.dataframe(missing_summary, use_container_width=True)
 
-# ========================================
-# 🩺 Missing Value Imputation
-# ========================================
+
 
 num_cols = df.select_dtypes(include=["float64", "int64"]).columns
 cat_cols = df.select_dtypes(include=["object", "string"]).columns
@@ -185,9 +165,7 @@ if not comparison_df.empty:
 else:
     st.success("✅ No missing values to compare!")
 
-# ========================================
-# 🧠 Encoding
-# ========================================
+
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -195,9 +173,6 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-# ========================================
-# 🎤 Top Artists & Songs Exploration
-# ========================================
 st.header("🎤 Top Artists & Songs Exploration")
 
 if "artist" in df.columns or "artists" in df.columns:
@@ -236,9 +211,6 @@ else:
 
 
 
-# ========================================
-# 📈 Popularity Over the Years
-# ========================================
 if "release_year" in df.columns and "popularity" in df.columns:
     st.subheader("📈 Popularity Trend Over the Years")
     year_popularity = df.groupby("release_year")["popularity"].mean().dropna()
@@ -251,9 +223,6 @@ if "release_year" in df.columns and "popularity" in df.columns:
     st.plotly_chart(fig, use_container_width=True)
 
 
-# ========================================
-# 📊 Exploratory Data Analysis (EDA)
-# ========================================
 st.header("📊 Exploratory Data Analysis (EDA)")
 
 num_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
@@ -282,9 +251,7 @@ if len(num_cols) > 1:
 else:
     st.info("Scatter plot requires at least two numeric features.")
 
-# ========================================
-# 🔗 Correlation Analysis
-# ========================================
+
 st.header("🔗 Feature Correlation Comparison")
 
 if len(num_cols) >= 2:
@@ -302,9 +269,7 @@ if len(num_cols) >= 2:
     else:
         st.warning("🔹 Weak or no correlation detected.")
 
-# ========================================
-# 🚨 Outlier Detection + Z-Score Removal
-# ========================================
+
 st.subheader("🚨 Outlier Detection and Z-Score Cleaning")
 
 if len(num_cols) > 0:
@@ -323,9 +288,6 @@ if len(num_cols) > 0:
     after_rows = df.shape[0]
     st.write(f"Removed **{before_rows - after_rows}** rows using Z-score threshold {z_threshold}")
 
-# ========================================
-# 📈 Regression
-# ========================================
 st.header("📉 Simple Linear Regression")
 
 if len(num_cols) >= 2:
@@ -350,9 +312,6 @@ else:
     st.info("Need at least two numeric features for regression.")
 
 
-# ========================================
-# 📉 PCA + Clustering
-# ========================================
 st.header("🎨 PCA + KMeans Clustering")
 
 pca_cols = [c for c in ['valence', 'energy', 'danceability', 'tempo', 'loudness', 'duration_ms', 'popularity'] if c in df.columns]
@@ -374,12 +333,9 @@ if len(pca_cols) >= 2:
     loadings = pd.DataFrame(pca.components_.T, columns=["PC1", "PC2"], index=pca_cols)
     st.dataframe(loadings.round(3))
 
-# ========================================
-# 📦 Export
-# ========================================
+
 df["processed_by"] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Complete Dashboard — Cleaning, EDA, Correlation, PCA, Regression, and Artist Analysis Ready!")
 
