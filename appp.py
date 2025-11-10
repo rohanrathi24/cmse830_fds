@@ -131,7 +131,6 @@ if len(drop_cols) > 0:
 # ========================================
 # 🩺 Missing Value Imputation
 # ========================================
-st.sidebar.header("🩺 Missing Value Imputation")
 
 num_cols = df.select_dtypes(include=["float64", "int64"]).columns
 cat_cols = df.select_dtypes(include=["object", "string"]).columns
