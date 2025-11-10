@@ -128,6 +128,20 @@ drop_cols = col_missing[col_missing > st.session_state.get("missing_thresh", 95)
 if len(drop_cols) > 0:
     df = df.drop(columns=drop_cols)
 
+st.subheader("📊 Dataset Summary")
+
+# Basic info
+st.write(f"**Rows:** {df.shape[0]} | **Columns:** {df.shape[1]}")
+
+# Show describe table
+desc_table = df.describe().T
+st.dataframe(desc_table, use_container_width=True)
+
+# Missing value summary
+missing_summary = df.isnull().sum().to_frame("Missing Values")
+st.write("### 🔍 Missing Value Overview")
+st.dataframe(missing_summary, use_container_width=True)
+
 # ========================================
 # 🩺 Missing Value Imputation
 # ========================================
