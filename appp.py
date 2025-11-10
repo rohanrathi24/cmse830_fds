@@ -6,23 +6,22 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.linear_model import LinearRegression
+from scipy.stats import zscore
 
 st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="wide")
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-A complete **Spotify data exploration dashboard** including:
-- 🧹 **Cleaning, Imputation, and Encoding**
-- 📊 **EDA with Histogram, Boxplot, Scatter**
-- 🔗 **Feature Correlation Explorer**
-- ⚙️ **PCA + KMeans Clustering**
+An **interactive dashboard** for analyzing Spotify datasets — from **cleaning** and **imputation**
+to **EDA**, **correlation exploration**, and **PCA clustering**.
 """)
 
 # ========================================
 # FILE UPLOAD
 # ========================================
 st.sidebar.header("📂 Upload CSV Files")
-uploaded_files = st.sidebar.file_uploader("Upload up to 2 CSV files", accept_multiple_files=True, type="csv")
+uploaded_files = st.sidebar.file_uploader("Upload up to 2 Spotify CSV files", accept_multiple_files=True, type="csv")
 
 if not uploaded_files:
     st.warning("Please upload at least one CSV file.")
@@ -37,9 +36,30 @@ for file in uploaded_files[:2]:
 df = pd.concat(dfs, ignore_index=True)
 
 # ========================================
+# DATASET OVERVIEW
+# ========================================
+with st.expander("📄 Dataset Overview", expanded=True):
+    st.subheader("🧭 Overview")
+    st.write(f"**Shape:** {df.shape[0]} rows × {df.shape[1]} columns")
+
+    search_term = st.text_input("🔍 Search column names")
+    all_cols = df.columns.tolist()
+    filtered_cols = [c for c in all_cols if search_term.lower() in c.lower()] if search_term else all_cols
+
+    selected_cols = st.multiselect("Select columns to preview", filtered_cols, default=filtered_cols[:5])
+    st.dataframe(df[selected_cols].head(10))
+
+    col_info = pd.DataFrame({
+        "Data Type": df.dtypes.astype(str),
+        "Missing Values": df.isnull().sum(),
+        "Unique Values": df.nunique()
+    })
+    st.dataframe(col_info.loc[filtered_cols])
+
+# ========================================
 # DATA CLEANING
 # ========================================
-st.header("🧹 Data Cleaning & Preprocessing")
+st.sidebar.header("🧹 Data Cleaning")
 
 if 'release_date' in df.columns:
     df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
@@ -47,19 +67,17 @@ if 'release_date' in df.columns:
     df['release_date'].fillna(pd.Timestamp(f"{most_common_year}-01-01"), inplace=True)
     df['release_year'] = df['release_date'].dt.year
 
-if st.checkbox("Drop Duplicates", value=True):
+if st.sidebar.checkbox("Drop Duplicates", value=True):
     df = df.drop_duplicates()
 
-drop_thresh = st.slider("Drop columns with > x% missing", 50, 100, 95)
+drop_thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
 df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
 
-st.write("✅ Data cleaned successfully!")
-
 # ========================================
-# IMPUTATION
+# MISSING VALUE IMPUTATION
 # ========================================
-st.subheader("🩺 Missing Value Imputation")
+st.sidebar.header("🩺 Missing Value Imputation")
 
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 cat_cols = df.select_dtypes(include=['object', 'string']).columns
@@ -67,20 +85,23 @@ cat_cols = df.select_dtypes(include=['object', 'string']).columns
 before_missing = df.isnull().sum()
 
 if len(num_cols) > 0:
-    num_strategy = st.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
-    df[num_cols] = SimpleImputer(strategy=num_strategy).fit_transform(df[num_cols])
+    numeric_strategy = st.sidebar.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
+    df[num_cols] = SimpleImputer(strategy=numeric_strategy).fit_transform(df[num_cols])
 
 if len(cat_cols) > 0:
-    cat_strategy = st.selectbox("Categorical imputation strategy", ["most_frequent", "constant"])
+    cat_strategy = st.sidebar.selectbox("Categorical imputation strategy", ["most_frequent", "constant"])
     df[cat_cols] = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None).fit_transform(df[cat_cols])
 
 after_missing = df.isnull().sum()
 comparison = pd.DataFrame({"Before": before_missing, "After": after_missing}).query("Before > 0 or After > 0")
 
 if not comparison.empty:
-    fig = px.bar(comparison.reset_index().melt(id_vars='index', var_name='Stage', value_name='Missing Values'),
-                 x='index', y='Missing Values', color='Stage',
-                 title="📉 Missing Values Before vs After Imputation")
+    fig = px.bar(
+        comparison.reset_index().melt(id_vars='index', var_name='Stage', value_name='Missing Values'),
+        x='index', y='Missing Values', color='Stage',
+        title="📉 Missing Values Before vs After Imputation",
+        barmode='group'
+    )
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.success("✅ No missing values remaining!")
@@ -88,8 +109,6 @@ else:
 # ========================================
 # ENCODING
 # ========================================
-st.subheader("🔡 Encoding Categorical Features")
-
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -97,14 +116,33 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-st.write("✅ Encoding complete!")
+# ========================================
+# INTERACTIVE FILTERS
+# ========================================
+st.sidebar.header("🎛️ Interactive Filters")
+
+if 'track_genre' in df.columns:
+    genre_options = df['track_genre'].dropna().unique().tolist()
+    selected_genres = st.sidebar.multiselect("Filter by Genre", genre_options, default=genre_options[:3])
+    df = df[df['track_genre'].isin(selected_genres)]
+
+if 'artists' in df.columns:
+    artist_options = df['artists'].dropna().unique().tolist()
+    selected_artists = st.sidebar.multiselect("Filter by Artist", artist_options[:50])
+    if selected_artists:
+        df = df[df['artists'].isin(selected_artists)]
+
+num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+if num_cols:
+    col_to_filter = st.sidebar.selectbox("Numeric filter column", num_cols)
+    min_val, max_val = float(df[col_to_filter].min()), float(df[col_to_filter].max())
+    selected_range = st.sidebar.slider(f"Filter {col_to_filter} range", min_val, max_val, (min_val, max_val))
+    df = df[(df[col_to_filter] >= selected_range[0]) & (df[col_to_filter] <= selected_range[1])]
 
 # ========================================
 # EXPLORATORY DATA ANALYSIS (EDA)
 # ========================================
-st.header("📊 Exploratory Data Analysis")
-
-num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+st.header("📊 Exploratory Data Analysis (EDA)")
 
 if len(num_cols) > 0:
     selected_feature = st.selectbox("Select a feature for visualization", num_cols)
@@ -127,9 +165,9 @@ if len(num_cols) > 0:
         st.plotly_chart(fig, use_container_width=True)
 
 # ========================================
-# FEATURE COMPARISON & CORRELATION
+# FEATURE CORRELATION COMPARISON
 # ========================================
-st.header("🔗 Feature Comparison & Correlation Explorer")
+st.header("🔗 Feature Correlation Comparison")
 
 if len(num_cols) >= 2:
     feature1 = st.selectbox("Feature 1", num_cols, index=0)
@@ -176,6 +214,7 @@ csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
 st.success("✅ Complete Dashboard — Cleaning, EDA, Correlation, and PCA Ready!")
+
 
 
 
