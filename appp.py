@@ -26,12 +26,51 @@ Interactive dashboard for **data cleaning**, **EDA**, **PCA + clustering**, **fe
 and **regression analysis** — designed for CMSE 830 Midterm.
 """)
 
-# ========================================
-# 📂 File Upload
-# ========================================
-st.sidebar.header("📂 Upload CSV Files")
-uploaded_files = st.sidebar.file_uploader("Upload up to 2 Spotify CSV files", accept_multiple_files=True, type="csv")
 
+# ========================================
+# 🎛️ Sidebar Navigation & Upload
+# ========================================
+with st.sidebar:
+    st.markdown("## 🎛️ **Dashboard Controls**")
+    st.markdown("---")
+
+    # 📂 File Upload
+    st.header("📂 Upload CSV Files")
+    uploaded_files = st.file_uploader("Upload up to 2 Spotify CSV files", accept_multiple_files=True, type="csv")
+
+    # 🧹 Cleaning Settings
+    st.markdown("---")
+    st.header("🧹 Data Cleaning Options")
+    st.checkbox("Drop duplicates", True, key="drop_dupes")
+    thresh = st.slider("Drop columns with > x% missing", 50, 100, 95, key="missing_thresh")
+
+    # 🧭 Quick Navigation
+    st.markdown("---")
+    st.header("🧭 Quick Navigation")
+    st.markdown("""
+    - 🩺 [Missing Value Imputation](#🩺-missing-value-imputation)
+    - 🎤 [Top Artists](#🎤-top-artists--songs-exploration)
+    - 📊 [EDA](#📊-exploratory-data-analysis-eda)
+    - 🔗 [Correlation](#🔗-feature-correlation-comparison)
+    - 🎨 [PCA + Clustering](#🎨-pca--kmeans-clustering)
+    """)
+
+    # 🌈 Theme toggle (visual only)
+    theme_choice = st.radio("🎨 Choose theme (visual)", ["Light Mode", "Dark Mode"], horizontal=True)
+    if theme_choice == "Dark Mode":
+        st.markdown("🌙 **Dark Mode Activated (Preview)**", unsafe_allow_html=True)
+    else:
+        st.markdown("☀️ **Light Mode Activated (Preview)**", unsafe_allow_html=True)
+
+    # 👤 About section
+    st.markdown("---")
+    st.markdown("**👤 Created by:** Rohan Rathi  \n📘 *CMSE 830 Midterm Project*")
+    st.caption("Use the controls above to explore and clean Spotify data interactively.")
+
+
+# ========================================
+# 📂 Load and Merge Files
+# ========================================
 if not uploaded_files:
     st.warning("Please upload at least one CSV file.")
     st.stop()
@@ -73,8 +112,6 @@ with st.expander("📄 Dataset Overview", expanded=True):
 # ========================================
 # 🧹 Data Cleaning
 # ========================================
-st.sidebar.header("🧹 Data Cleaning")
-
 if "release_date" in df.columns:
     df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
     df["release_year"] = df["release_date"].dt.year
@@ -83,12 +120,11 @@ if "release_date" in df.columns:
         most_common_year = int(df["release_date"].dt.year.mode()[0])
         df["release_date"] = df["release_date"].fillna(pd.Timestamp(f"{most_common_year}-01-01"))
 
-if st.sidebar.checkbox("Drop duplicates", True):
+if st.session_state.get("drop_dupes", True):
     df = df.drop_duplicates()
 
-thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
-drop_cols = col_missing[col_missing > thresh].index
+drop_cols = col_missing[col_missing > st.session_state.get("missing_thresh", 95)].index
 if len(drop_cols) > 0:
     df = df.drop(columns=drop_cols)
 
@@ -184,6 +220,7 @@ if "artist" in df.columns or "artists" in df.columns:
         st.dataframe(artist_songs.head(20))
 else:
     st.warning("No artist column found in dataset. Please ensure your dataset includes an 'artist' or 'artists' column.")
+
 
 
 # ========================================
