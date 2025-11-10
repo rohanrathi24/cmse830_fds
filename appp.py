@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -14,19 +13,15 @@ st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Interactive dashboard with **data cleaning**, **imputation**, **encoding**, **EDA**, **PCA + clustering**, 
-and **advanced techniques** like **feature scaling**, **outlier detection**, and **regression analysis**.
+An **interactive data exploration dashboard** for analyzing Spotify datasets.  
+Includes **cleaning**, **imputation**, **encoding**, **EDA**, **PCA & Clustering**, and **advanced analytics**.
 """)
 
-# -------------------------------
-# File Upload
-# -------------------------------
+# ========================================
+# FILE UPLOAD
+# ========================================
 st.sidebar.header("📂 Upload CSV Files")
-uploaded_files = st.sidebar.file_uploader(
-    "Upload up to 2 Spotify CSV files",
-    accept_multiple_files=True,
-    type="csv"
-)
+uploaded_files = st.sidebar.file_uploader("Upload up to 2 CSV files", accept_multiple_files=True, type="csv")
 
 if not uploaded_files:
     st.warning("Please upload at least one CSV file.")
@@ -34,108 +29,90 @@ if not uploaded_files:
 
 dfs = []
 for file in uploaded_files[:2]:
-    try:
-        temp_df = pd.read_csv(file)
-        temp_df = temp_df.loc[:, ~temp_df.columns.str.contains('^Unnamed')]
-        dfs.append(temp_df)
-    except Exception as e:
-        st.error(f"Error reading {file.name}: {e}")
+    df_temp = pd.read_csv(file)
+    df_temp = df_temp.loc[:, ~df_temp.columns.str.contains('^Unnamed')]
+    dfs.append(df_temp)
 
 df = pd.concat(dfs, ignore_index=True)
 
-# -------------------------------
-# Dataset Overview
-# -------------------------------
+# ========================================
+# DATASET OVERVIEW
+# ========================================
 with st.expander("📄 Dataset Overview", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Rows", df.shape[0])
-    with col2:
-        st.metric("Columns", df.shape[1])
+    st.subheader("🧭 Overview")
+    st.write(f"**Shape:** {df.shape[0]} rows × {df.shape[1]} columns")
 
-    search = st.text_input("🔍 Search columns", "")
-    columns = [c for c in df.columns if search.lower() in c.lower()] if search else df.columns
-    selected = st.multiselect("Select columns to view sample", columns, default=columns[:5])
-    st.dataframe(df[selected].head(10))
+    search_term = st.text_input("🔍 Search column names")
+    all_cols = df.columns.tolist()
+    filtered_cols = [c for c in all_cols if search_term.lower() in c.lower()] if search_term else all_cols
 
-    meta = pd.DataFrame({
+    selected_cols = st.multiselect("Select columns to preview", filtered_cols, default=filtered_cols[:5])
+    st.dataframe(df[selected_cols].head(10))
+
+    col_info = pd.DataFrame({
         "Data Type": df.dtypes.astype(str),
         "Missing Values": df.isnull().sum(),
         "Unique Values": df.nunique()
     })
-    st.write("📊 Column Metadata")
-    st.dataframe(meta.loc[columns])
+    st.dataframe(col_info.loc[filtered_cols])
 
-# -------------------------------
-# Data Cleaning
-# -------------------------------
+# ========================================
+# DATA CLEANING
+# ========================================
 st.sidebar.header("🧹 Data Cleaning")
 
-if "release_date" in df.columns:
-    df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
-    df["release_year"] = df["release_date"].dt.year
-    missing_dates = df["release_date"].isna().sum()
-    if missing_dates > 0:
-        most_common_year = int(df["release_date"].dt.year.mode()[0])
-        df["release_date"] = df["release_date"].fillna(pd.Timestamp(f"{most_common_year}-01-01"))
+if 'release_date' in df.columns:
+    df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
+    most_common_year = int(df['release_date'].dt.year.mode()[0])
+    df['release_date'].fillna(pd.Timestamp(f"{most_common_year}-01-01"), inplace=True)
+    df['release_year'] = df['release_date'].dt.year
 
-if st.sidebar.checkbox("Drop duplicates", True):
+if st.sidebar.checkbox("Drop Duplicates", value=True):
     df = df.drop_duplicates()
 
-thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
+drop_thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
-drop_cols = col_missing[col_missing > thresh].index
-if len(drop_cols) > 0:
-    df = df.drop(columns=drop_cols)
+df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
 
-# -------------------------------
-# Imputation
-# -------------------------------
+# ========================================
+# MISSING VALUE IMPUTATION (Interactive)
+# ========================================
 st.sidebar.header("🩺 Missing Value Imputation")
 
-num_cols = df.select_dtypes(include=["float64", "int64"]).columns
-cat_cols = df.select_dtypes(include=["object", "string"]).columns
+num_cols = df.select_dtypes(include=['float64', 'int64']).columns
+cat_cols = df.select_dtypes(include=['object', 'string']).columns
 
 before_missing = df.isnull().sum()
 
 if len(num_cols) > 0:
-    st.subheader("⚙️ Numeric Imputation")
-    num_strategy = st.selectbox("Strategy for numeric columns", ["mean", "median", "most_frequent"])
-    num_imputer = SimpleImputer(strategy=num_strategy)
-    df[num_cols] = num_imputer.fit_transform(df[num_cols])
+    numeric_strategy = st.sidebar.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
+    df[num_cols] = SimpleImputer(strategy=numeric_strategy).fit_transform(df[num_cols])
 
 if len(cat_cols) > 0:
-    st.subheader("🧩 Categorical Imputation")
-    cat_strategy = st.selectbox("Strategy for categorical columns", ["most_frequent", "constant"])
-    cat_imputer = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None)
-    df[cat_cols] = cat_imputer.fit_transform(df[cat_cols])
+    cat_strategy = st.sidebar.selectbox("Categorical imputation strategy", ["most_frequent", "constant"])
+    df[cat_cols] = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None).fit_transform(df[cat_cols])
 
 after_missing = df.isnull().sum()
 
-# 📉 Missing Values Comparison
-st.subheader("📉 Missing Values Before vs After Imputation")
-comparison_df = pd.DataFrame({"Before": before_missing, "After": after_missing})
-comparison_df = comparison_df[(comparison_df["Before"] > 0) | (comparison_df["After"] > 0)]
+comparison = pd.DataFrame({
+    "Before": before_missing,
+    "After": after_missing
+}).query("Before > 0 or After > 0")
 
-if not comparison_df.empty:
-    st.dataframe(comparison_df.sort_values("Before", ascending=False).head(20))
-    fig, ax = plt.subplots(figsize=(10, 4))
-    width = 0.4
-    x = np.arange(len(comparison_df))
-    ax.bar(x - width/2, comparison_df["Before"], width, color="coral", label="Before")
-    ax.bar(x + width/2, comparison_df["After"], width, color="skyblue", label="After")
-    ax.set_xticks(x)
-    ax.set_xticklabels(comparison_df.index, rotation=90)
-    ax.set_ylabel("Missing Values Count")
-    ax.set_title("Missing Values Before vs After Imputation")
-    ax.legend()
-    st.pyplot(fig)
+if not comparison.empty:
+    fig = px.bar(
+        comparison.reset_index().melt(id_vars='index', var_name='Stage', value_name='Missing Values'),
+        x='index', y='Missing Values', color='Stage',
+        title="📉 Missing Values Before vs After Imputation",
+        barmode='group'
+    )
+    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.success("✅ No missing values to compare!")
+    st.success("✅ No missing values remaining!")
 
-# -------------------------------
-# Encoding
-# -------------------------------
+# ========================================
+# ENCODING
+# ========================================
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -143,130 +120,68 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-# -------------------------------
-# Statistical Exploration
-# -------------------------------
-st.header("📊 Statistical & Advanced Exploration")
+# ========================================
+# INTERACTIVE FILTERS
+# ========================================
+st.sidebar.header("🎛️ Interactive Filters")
 
-num_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+if 'track_genre' in df.columns:
+    genre_options = df['track_genre'].dropna().unique().tolist()
+    selected_genres = st.sidebar.multiselect("Filter by Genre", genre_options, default=genre_options[:3])
+    df = df[df['track_genre'].isin(selected_genres)]
+
+if 'artists' in df.columns:
+    artist_options = df['artists'].dropna().unique().tolist()
+    selected_artists = st.sidebar.multiselect("Filter by Artist", artist_options[:50])
+
+    if selected_artists:
+        df = df[df['artists'].isin(selected_artists)]
+
+num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+if num_cols:
+    col_to_filter = st.sidebar.selectbox("Numeric filter column", num_cols)
+    min_val, max_val = float(df[col_to_filter].min()), float(df[col_to_filter].max())
+    selected_range = st.sidebar.slider(f"Filter {col_to_filter} range", min_val, max_val, (min_val, max_val))
+    df = df[(df[col_to_filter] >= selected_range[0]) & (df[col_to_filter] <= selected_range[1])]
+
+# ========================================
+# EXPLORATORY VISUALIZATION (Plotly)
+# ========================================
+st.header("📊 Exploratory Visualization")
 
 if len(num_cols) > 0:
-    st.subheader("📈 Explore a Numerical Feature")
-    selected_num = st.selectbox("Select a numerical column", num_cols)
-    stats = df[selected_num].describe()
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Mean", f"{stats['mean']:.2f}")
-    with col2:
-        st.metric("Median", f"{df[selected_num].median():.2f}")
-    with col3:
-        st.metric("Std. Dev.", f"{stats['std']:.2f}")
-    fig, ax = plt.subplots(figsize=(5, 4))
-    sns.histplot(df[selected_num], kde=True, color="coral", ax=ax)
-    ax.set_title(f"Distribution of {selected_num}")
-    st.pyplot(fig)
+    feature = st.selectbox("Select numerical feature to explore", num_cols)
+    fig = px.histogram(df, x=feature, nbins=40, marginal="box", color_discrete_sequence=['coral'])
+    st.plotly_chart(fig, use_container_width=True)
 
-# -------------------------------
-# Outlier Detection
-# -------------------------------
-st.subheader("🚨 Outlier Detection")
-if len(num_cols) > 0:
-    selected_outlier = st.selectbox("Select feature for outlier detection", num_cols)
-    q1, q3 = df[selected_outlier].quantile([0.25, 0.75])
-    iqr = q3 - q1
-    outliers = df[(df[selected_outlier] < q1 - 1.5 * iqr) | (df[selected_outlier] > q3 + 1.5 * iqr)]
-    st.write(f"Detected **{outliers.shape[0]}** outliers in **{selected_outlier}**")
-    fig, ax = plt.subplots(figsize=(6, 4))
-    sns.boxplot(x=df[selected_outlier], color="skyblue", ax=ax)
-    ax.set_title(f"Outliers in {selected_outlier}")
-    st.pyplot(fig)
+# ========================================
+# PCA & CLUSTERING
+# ========================================
+st.header("📈 PCA + KMeans Clustering")
 
-# -------------------------------
-# Regression Explorer
-# -------------------------------
-st.subheader("📉 Linear Relationship Explorer")
-if len(num_cols) >= 2:
-    x_col = st.selectbox("Select X variable", num_cols)
-    y_col = st.selectbox("Select Y variable", num_cols)
-    sns.lmplot(x=x_col, y=y_col, data=df, height=5, aspect=1.5, scatter_kws={"alpha": 0.6})
-    plt.title(f"Regression Fit: {y_col} vs {x_col}")
-    st.pyplot(plt)
-    plt.clf()
-
-# -------------------------------
-# PCA & Clustering
-# -------------------------------
-st.header("📈 PCA and Clustering")
-
-num_data = df.select_dtypes(include=["float64", "int64"])
-if len(num_data.columns) > 1:
-    with st.expander("Correlation Heatmap"):
-        fig, ax = plt.subplots(figsize=(10, 7))
-        sns.heatmap(num_data.corr(), annot=True, cmap="coolwarm", ax=ax)
-        st.pyplot(fig)
-
-pca_cols = [c for c in ["valence", "energy", "danceability", "tempo", "loudness", "duration_ms", "popularity"] if c in df.columns]
-
+pca_cols = [c for c in ['valence', 'energy', 'danceability', 'tempo', 'loudness', 'duration_ms', 'popularity'] if c in df.columns]
 if len(pca_cols) >= 2:
-    st.subheader("⚙️ PCA + KMeans Clustering")
     X = df[pca_cols].dropna()
     X_scaled = StandardScaler().fit_transform(X)
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
+
     k = st.slider("Select number of clusters (k)", 2, 8, 3)
-    kmeans = KMeans(n_clusters=k, random_state=42)
-    labels = kmeans.fit_predict(X_pca)
-    fig, ax = plt.subplots(figsize=(8, 5))
-    scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap="tab10", s=40)
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.set_title("PCA Projection with KMeans Clusters")
-    st.pyplot(fig)
-    st.write("Explained variance ratio:", pca.explained_variance_ratio_.round(3))
-    loadings = pd.DataFrame(pca.components_.T, columns=["PC1", "PC2"], index=pca_cols)
-    st.dataframe(loadings.round(3))
+    labels = KMeans(n_clusters=k, random_state=42).fit_predict(X_pca)
 
-# -------------------------------
-# Advanced Data Techniques
-# -------------------------------
-st.header("🧠 Advanced Data Techniques")
+    pca_df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+    pca_df['Cluster'] = labels
 
-# Z-Score Outlier Removal
-st.subheader("1️⃣ Z-Score Based Outlier Removal")
-if len(num_cols) > 0:
-    z_threshold = st.slider("Select Z-score threshold", 1.5, 4.0, 3.0)
-    before_rows = df.shape[0]
-    df = df[(np.abs(zscore(df[num_cols])) < z_threshold).all(axis=1)]
-    after_rows = df.shape[0]
-    st.write(f"Removed **{before_rows - after_rows}** rows using Z-score threshold {z_threshold}")
+    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="PCA Clustering Visualization")
+    st.plotly_chart(fig, use_container_width=True)
 
-# Feature Scaling
-st.subheader("2️⃣ Feature Scaling Visualization")
-if len(num_cols) > 0:
-    scaler = StandardScaler()
-    scaled_df = pd.DataFrame(scaler.fit_transform(df[num_cols]), columns=num_cols)
-    st.line_chart(scaled_df.head(50))
-
-# Simple Regression
-st.subheader("3️⃣ Simple Regression Analysis")
-if len(num_cols) >= 2:
-    x_feat = st.selectbox("Independent variable (X)", num_cols)
-    y_feat = st.selectbox("Dependent variable (Y)", num_cols)
-    model = LinearRegression()
-    model.fit(df[[x_feat]], df[y_feat])
-    r2 = model.score(df[[x_feat]], df[y_feat])
-    st.write(f"**R² Score:** {r2:.3f}")
-    sns.regplot(x=x_feat, y=y_feat, data=df, scatter_kws={"alpha": 0.5})
-    plt.title(f"Regression: {y_feat} vs {x_feat}")
-    st.pyplot(plt)
-    plt.clf()
-
-# -------------------------------
-# Export
-# -------------------------------
-df["processed_by"] = "Rohan Rathi — CMSE 830 Midterm"
+# ========================================
+# EXPORT
+# ========================================
+df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Project Completed — CMSE 830 Midterm Advanced Version")
+st.success("✅ Interactive Dashboard Ready — CMSE 830 Midterm Advanced Version")
+
 
