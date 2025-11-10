@@ -6,12 +6,13 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from scipy.stats import pearsonr
 
 st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="wide")
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Compare **two features interactively** across histograms, boxplots, correlations, and scatter plots.  
+Compare **two features interactively** using histograms, boxplots, correlations, and scatter plots.  
 Includes **data cleaning**, **imputation**, **encoding**, **EDA**, and **PCA + clustering**.
 """)
 
@@ -55,8 +56,6 @@ df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 cat_cols = df.select_dtypes(include=['object', 'string']).columns
 
-before_missing = df.isnull().sum()
-
 if len(num_cols) > 0:
     num_strategy = st.sidebar.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
     df[num_cols] = SimpleImputer(strategy=num_strategy).fit_transform(df[num_cols])
@@ -76,50 +75,55 @@ for col in cat_cols:
         df[col + "_freq"] = df[col].map(freq)
 
 # ========================================
-# FEATURE COMPARISON & CORRELATION
+# EXPLORATORY DATA ANALYSIS
 # ========================================
-st.header("📊 Feature Comparison & Correlation Explorer")
+st.header("📊 Exploratory Data Analysis (EDA)")
 
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
 
+if len(num_cols) > 0:
+    selected_feature = st.selectbox("Select numerical feature for visualization", num_cols)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_hist = px.histogram(df, x=selected_feature, nbins=40, title=f"Histogram of {selected_feature}", color_discrete_sequence=['#1f77b4'])
+        st.plotly_chart(fig_hist, use_container_width=True)
+    with col2:
+        fig_box = px.box(df, y=selected_feature, title=f"Box Plot of {selected_feature}", color_discrete_sequence=['#ff7f50'])
+        st.plotly_chart(fig_box, use_container_width=True)
+
+# ========================================
+# FEATURE CORRELATION & RELATIONSHIP
+# ========================================
+st.header("📈 Feature Correlation & Relationship Explorer")
+
 if len(num_cols) >= 2:
-    feature1 = st.selectbox("Select Feature 1", num_cols, index=0)
-    feature2 = st.selectbox("Select Feature 2", num_cols, index=1)
-    viz_type = st.radio("Choose Visualization Type", ["Histogram Comparison", "Box Plot Comparison", "Correlation Heatmap", "Scatter Plot"])
+    feature1 = st.selectbox("Select Feature X", num_cols, index=0)
+    feature2 = st.selectbox("Select Feature Y", num_cols, index=1)
 
-    if viz_type == "Histogram Comparison":
-        fig = px.histogram(
-            df, x=feature1, color_discrete_sequence=["#ff7f50"], nbins=40, opacity=0.6, marginal="rug", title=f"Histogram of {feature1}"
-        )
-        fig2 = px.histogram(
-            df, x=feature2, color_discrete_sequence=["#1f77b4"], nbins=40, opacity=0.6, marginal="rug", title=f"Histogram of {feature2}"
-        )
-        fig.update_traces(opacity=0.5)
-        fig2.update_traces(opacity=0.5)
-        st.plotly_chart(fig, use_container_width=True)
-        st.plotly_chart(fig2, use_container_width=True)
+    # Compute Pearson correlation
+    corr_value, _ = pearsonr(df[feature1], df[feature2])
+    relation_strength = (
+        "Strongly related 🔥" if abs(corr_value) > 0.7
+        else "Moderately related 💡" if abs(corr_value) > 0.3
+        else "Weakly related ❄️"
+    )
+    st.markdown(f"**Correlation ({feature1} vs {feature2}) → r = `{corr_value:.3f}` → {relation_strength}**")
 
-    elif viz_type == "Box Plot Comparison":
-        df_melt = df[[feature1, feature2]].melt(var_name="Feature", value_name="Value")
-        fig = px.box(df_melt, x="Feature", y="Value", color="Feature", title="Box Plot Comparison")
-        st.plotly_chart(fig, use_container_width=True)
+    # Correlation heatmap
+    corr = df[[feature1, feature2]].corr()
+    fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale='RdBu_r', title=f"Correlation Heatmap: {feature1} vs {feature2}")
+    st.plotly_chart(fig_corr, use_container_width=True)
 
-    elif viz_type == "Correlation Heatmap":
-        corr = df[[feature1, feature2]].corr()
-        fig = px.imshow(corr, text_auto=True, color_continuous_scale='RdBu_r', title=f"Correlation: {feature1} vs {feature2}")
-        st.plotly_chart(fig, use_container_width=True)
-
-    elif viz_type == "Scatter Plot":
-        fig = px.scatter(
-            df, x=feature1, y=feature2, color_discrete_sequence=["#00cc96"],
-            title=f"Scatter Plot: {feature1} vs {feature2}"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # Scatter plot
+    fig_scatter = px.scatter(df, x=feature1, y=feature2, trendline="ols",
+                             title=f"Scatter Plot: {feature1} vs {feature2}", color_discrete_sequence=["#00cc96"])
+    st.plotly_chart(fig_scatter, use_container_width=True)
 
 # ========================================
 # PCA & CLUSTERING
 # ========================================
-st.header("📈 PCA + KMeans Clustering")
+st.header("📉 PCA + KMeans Clustering")
 
 pca_cols = [c for c in ['valence', 'energy', 'danceability', 'tempo', 'loudness', 'duration_ms', 'popularity'] if c in df.columns]
 if len(pca_cols) >= 2:
@@ -143,7 +147,8 @@ df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Enhanced Dashboard Ready — Compare Two Features & Explore Correlations")
+st.success("✅ Final Dashboard Ready — EDA, Correlation Insights & PCA Analysis Included")
+
 
 
 
