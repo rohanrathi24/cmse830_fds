@@ -133,7 +133,6 @@ if 'track_genre' in df.columns:
 if 'artists' in df.columns:
     artist_options = df['artists'].dropna().unique().tolist()
     selected_artists = st.sidebar.multiselect("Filter by Artist", artist_options[:50])
-
     if selected_artists:
         df = df[df['artists'].isin(selected_artists)]
 
@@ -147,12 +146,36 @@ if num_cols:
 # ========================================
 # EXPLORATORY VISUALIZATION (Plotly)
 # ========================================
-st.header("📊 Exploratory Visualization")
+st.header("📊 Exploratory Data Analysis")
 
 if len(num_cols) > 0:
-    feature = st.selectbox("Select numerical feature to explore", num_cols)
-    fig = px.histogram(df, x=feature, nbins=40, marginal="box", color_discrete_sequence=['coral'])
-    st.plotly_chart(fig, use_container_width=True)
+    chart_type = st.radio("Select visualization type", ["Histogram", "Box Plot", "Correlation Heatmap", "Scatter Matrix"])
+
+    if chart_type == "Histogram":
+        feature = st.selectbox("Select feature for histogram", num_cols)
+        fig = px.histogram(df, x=feature, nbins=40, marginal="box", color_discrete_sequence=['coral'])
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif chart_type == "Box Plot":
+        feature = st.selectbox("Select feature for boxplot", num_cols)
+        fig = px.box(df, y=feature, points="all", title=f"Box Plot for {feature}")
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif chart_type == "Correlation Heatmap":
+        corr = df[num_cols].corr()
+        fig = px.imshow(
+            corr,
+            text_auto=True,
+            color_continuous_scale='RdBu_r',
+            title="🔗 Correlation Heatmap of Numerical Features"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif chart_type == "Scatter Matrix":
+        features = st.multiselect("Select features for scatter matrix", num_cols, default=num_cols[:4])
+        if len(features) >= 2:
+            fig = px.scatter_matrix(df, dimensions=features, color=features[0], title="Scatter Matrix View")
+            st.plotly_chart(fig, use_container_width=True)
 
 # ========================================
 # PCA & CLUSTERING
@@ -172,7 +195,7 @@ if len(pca_cols) >= 2:
     pca_df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
     pca_df['Cluster'] = labels
 
-    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="PCA Clustering Visualization")
+    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="🎨 PCA Clustering Visualization", color_continuous_scale='viridis')
     st.plotly_chart(fig, use_container_width=True)
 
 # ========================================
@@ -183,5 +206,6 @@ csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
 st.success("✅ Interactive Dashboard Ready — CMSE 830 Midterm Advanced Version")
+
 
 
