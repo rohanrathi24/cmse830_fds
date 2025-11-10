@@ -173,18 +173,27 @@ if len(num_cols) >= 2:
     feature1 = st.selectbox("Feature 1", num_cols, index=0)
     feature2 = st.selectbox("Feature 2", num_cols, index=1)
 
-    corr_value = df[[feature1, feature2]].corr().iloc[0, 1]
-    fig = px.imshow(df[[feature1, feature2]].corr(), text_auto=True, color_continuous_scale='RdBu_r',
-                    title=f"Correlation Heatmap — {feature1} vs {feature2}")
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown(f"📈 **Correlation Coefficient:** `{corr_value:.2f}`")
-    if abs(corr_value) > 0.7:
-        st.success("✅ Strong correlation between features!")
-    elif abs(corr_value) > 0.4:
-        st.info("🟨 Moderate correlation.")
+    # Handle identical features gracefully
+    if feature1 == feature2:
+        st.warning("⚠️ Please select two different features to compare.")
     else:
-        st.warning("🔹 Weak or no correlation detected.")
+        corr = df[[feature1, feature2]].corr()
+        corr_value = corr.iloc[0, 1]
+
+        fig = px.imshow(
+            corr, text_auto=True, color_continuous_scale='RdBu_r',
+            title=f"Correlation Heatmap — {feature1} vs {feature2}"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown(f"📈 **Correlation Coefficient:** `{corr_value:.2f}`")
+
+        if abs(corr_value) > 0.7:
+            st.success("✅ Strong correlation between features!")
+        elif abs(corr_value) > 0.4:
+            st.info("🟨 Moderate correlation.")
+        else:
+            st.warning("🔹 Weak or no correlation detected.")
 
 # ========================================
 # PCA + CLUSTERING
