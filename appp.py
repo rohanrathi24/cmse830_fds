@@ -6,14 +6,16 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-from scipy.stats import pearsonr
 
 st.set_page_config(page_title="Spotify Dashboard — CMSE 830 Midterm", layout="wide")
 
 st.title("🎵 Spotify Data Exploration Dashboard — CMSE 830 Midterm")
 st.markdown("""
-Compare **two features interactively** using histograms, boxplots, correlations, and scatter plots.  
-Includes **data cleaning**, **imputation**, **encoding**, **EDA**, and **PCA + clustering**.
+A complete **Spotify data exploration dashboard** including:
+- 🧹 **Cleaning, Imputation, and Encoding**
+- 📊 **EDA with Histogram, Boxplot, Scatter**
+- 🔗 **Feature Correlation Explorer**
+- ⚙️ **PCA + KMeans Clustering**
 """)
 
 # ========================================
@@ -37,36 +39,57 @@ df = pd.concat(dfs, ignore_index=True)
 # ========================================
 # DATA CLEANING
 # ========================================
+st.header("🧹 Data Cleaning & Preprocessing")
+
 if 'release_date' in df.columns:
     df['release_date'] = pd.to_datetime(df['release_date'], errors='coerce')
     most_common_year = int(df['release_date'].dt.year.mode()[0])
     df['release_date'].fillna(pd.Timestamp(f"{most_common_year}-01-01"), inplace=True)
     df['release_year'] = df['release_date'].dt.year
 
-if st.sidebar.checkbox("Drop Duplicates", value=True):
+if st.checkbox("Drop Duplicates", value=True):
     df = df.drop_duplicates()
 
-drop_thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
+drop_thresh = st.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
 df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
+
+st.write("✅ Data cleaned successfully!")
 
 # ========================================
 # IMPUTATION
 # ========================================
+st.subheader("🩺 Missing Value Imputation")
+
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 cat_cols = df.select_dtypes(include=['object', 'string']).columns
 
+before_missing = df.isnull().sum()
+
 if len(num_cols) > 0:
-    num_strategy = st.sidebar.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
+    num_strategy = st.selectbox("Numeric imputation strategy", ["mean", "median", "most_frequent"])
     df[num_cols] = SimpleImputer(strategy=num_strategy).fit_transform(df[num_cols])
 
 if len(cat_cols) > 0:
-    cat_strategy = st.sidebar.selectbox("Categorical imputation strategy", ["most_frequent", "constant"])
+    cat_strategy = st.selectbox("Categorical imputation strategy", ["most_frequent", "constant"])
     df[cat_cols] = SimpleImputer(strategy=cat_strategy, fill_value="Unknown" if cat_strategy == "constant" else None).fit_transform(df[cat_cols])
+
+after_missing = df.isnull().sum()
+comparison = pd.DataFrame({"Before": before_missing, "After": after_missing}).query("Before > 0 or After > 0")
+
+if not comparison.empty:
+    fig = px.bar(comparison.reset_index().melt(id_vars='index', var_name='Stage', value_name='Missing Values'),
+                 x='index', y='Missing Values', color='Stage',
+                 title="📉 Missing Values Before vs After Imputation")
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.success("✅ No missing values remaining!")
 
 # ========================================
 # ENCODING
 # ========================================
+st.subheader("🔡 Encoding Categorical Features")
+
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -74,54 +97,59 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
+st.write("✅ Encoding complete!")
+
 # ========================================
-# EXPLORATORY DATA ANALYSIS
+# EXPLORATORY DATA ANALYSIS (EDA)
 # ========================================
-st.header("📊 Exploratory Data Analysis (EDA)")
+st.header("📊 Exploratory Data Analysis")
 
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
 
 if len(num_cols) > 0:
-    selected_feature = st.selectbox("Select numerical feature for visualization", num_cols)
+    selected_feature = st.selectbox("Select a feature for visualization", num_cols)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        fig_hist = px.histogram(df, x=selected_feature, nbins=40, title=f"Histogram of {selected_feature}", color_discrete_sequence=['#1f77b4'])
-        st.plotly_chart(fig_hist, use_container_width=True)
-    with col2:
-        fig_box = px.box(df, y=selected_feature, title=f"Box Plot of {selected_feature}", color_discrete_sequence=['#ff7f50'])
-        st.plotly_chart(fig_box, use_container_width=True)
+    tab1, tab2, tab3 = st.tabs(["📈 Histogram", "📦 Box Plot", "⚫ Scatter Plot"])
+    with tab1:
+        fig = px.histogram(df, x=selected_feature, nbins=40, color_discrete_sequence=["#FF7F50"],
+                           title=f"Histogram of {selected_feature}")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab2:
+        fig = px.box(df, y=selected_feature, color_discrete_sequence=["#00CC96"],
+                     title=f"Box Plot of {selected_feature}")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab3:
+        other_feature = st.selectbox("Select another feature for scatter plot", num_cols, index=1)
+        fig = px.scatter(df, x=selected_feature, y=other_feature, color_discrete_sequence=["#1F77B4"],
+                         title=f"Scatter Plot: {selected_feature} vs {other_feature}")
+        st.plotly_chart(fig, use_container_width=True)
 
 # ========================================
-# FEATURE CORRELATION & RELATIONSHIP
+# FEATURE COMPARISON & CORRELATION
 # ========================================
-st.header("📈 Feature Correlation & Relationship Explorer")
+st.header("🔗 Feature Comparison & Correlation Explorer")
 
 if len(num_cols) >= 2:
-    feature1 = st.selectbox("Select Feature X", num_cols, index=0)
-    feature2 = st.selectbox("Select Feature Y", num_cols, index=1)
+    feature1 = st.selectbox("Feature 1", num_cols, index=0)
+    feature2 = st.selectbox("Feature 2", num_cols, index=1)
 
-    # Compute Pearson correlation
-    corr_value, _ = pearsonr(df[feature1], df[feature2])
-    relation_strength = (
-        "Strongly related 🔥" if abs(corr_value) > 0.7
-        else "Moderately related 💡" if abs(corr_value) > 0.3
-        else "Weakly related ❄️"
-    )
-    st.markdown(f"**Correlation ({feature1} vs {feature2}) → r = `{corr_value:.3f}` → {relation_strength}**")
+    corr_value = df[[feature1, feature2]].corr().iloc[0, 1]
+    fig = px.imshow(df[[feature1, feature2]].corr(), text_auto=True, color_continuous_scale='RdBu_r',
+                    title=f"Correlation Heatmap — {feature1} vs {feature2}")
+    st.plotly_chart(fig, use_container_width=True)
 
-    # Correlation heatmap
-    corr = df[[feature1, feature2]].corr()
-    fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale='RdBu_r', title=f"Correlation Heatmap: {feature1} vs {feature2}")
-    st.plotly_chart(fig_corr, use_container_width=True)
-
-    # Scatter plot
-    fig_scatter = px.scatter(df, x=feature1, y=feature2, trendline="ols",
-                             title=f"Scatter Plot: {feature1} vs {feature2}", color_discrete_sequence=["#00cc96"])
-    st.plotly_chart(fig_scatter, use_container_width=True)
+    st.markdown(f"📈 **Correlation Coefficient:** `{corr_value:.2f}`")
+    if abs(corr_value) > 0.7:
+        st.success("✅ Strong correlation between features!")
+    elif abs(corr_value) > 0.4:
+        st.info("🟨 Moderate correlation.")
+    else:
+        st.warning("🔹 Weak or no correlation detected.")
 
 # ========================================
-# PCA & CLUSTERING
+# PCA + CLUSTERING
 # ========================================
 st.header("📉 PCA + KMeans Clustering")
 
@@ -137,7 +165,7 @@ if len(pca_cols) >= 2:
     pca_df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
     pca_df['Cluster'] = labels
 
-    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="🎨 PCA Clustering Visualization", color_continuous_scale='viridis')
+    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="🎨 PCA Clustering Visualization")
     st.plotly_chart(fig, use_container_width=True)
 
 # ========================================
@@ -147,7 +175,8 @@ df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Final Dashboard Ready — EDA, Correlation Insights & PCA Analysis Included")
+st.success("✅ Complete Dashboard — Cleaning, EDA, Correlation, and PCA Ready!")
+
 
 
 
