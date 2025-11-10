@@ -17,9 +17,7 @@ An **interactive dashboard** for analyzing Spotify datasets — from **cleaning*
 to **EDA**, **correlation exploration**, and **PCA clustering**.
 """)
 
-# ========================================
-# FILE UPLOAD
-# ========================================
+
 st.sidebar.header("📂 Upload CSV Files")
 uploaded_files = st.sidebar.file_uploader("Upload up to 2 Spotify CSV files", accept_multiple_files=True, type="csv")
 
@@ -35,9 +33,7 @@ for file in uploaded_files[:2]:
 
 df = pd.concat(dfs, ignore_index=True)
 
-# ========================================
-# DATASET OVERVIEW
-# ========================================
+
 with st.expander("📄 Dataset Overview", expanded=True):
     st.subheader("🧭 Overview")
     st.write(f"**Shape:** {df.shape[0]} rows × {df.shape[1]} columns")
@@ -56,9 +52,7 @@ with st.expander("📄 Dataset Overview", expanded=True):
     })
     st.dataframe(col_info.loc[filtered_cols])
 
-# ========================================
-# DATA CLEANING
-# ========================================
+
 st.sidebar.header("🧹 Data Cleaning")
 
 if 'release_date' in df.columns:
@@ -74,9 +68,7 @@ drop_thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
 df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
 
-# ========================================
-# MISSING VALUE IMPUTATION
-# ========================================
+
 st.sidebar.header("🩺 Missing Value Imputation")
 
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
@@ -106,9 +98,7 @@ if not comparison.empty:
 else:
     st.success("✅ No missing values remaining!")
 
-# ========================================
-# ENCODING
-# ========================================
+
 for col in cat_cols:
     if df[col].nunique() <= 10:
         df = pd.get_dummies(df, columns=[col], prefix=col)
@@ -116,9 +106,7 @@ for col in cat_cols:
         freq = df[col].value_counts(normalize=True)
         df[col + "_freq"] = df[col].map(freq)
 
-# ========================================
-# INTERACTIVE FILTERS
-# ========================================
+
 st.sidebar.header("🎛️ Interactive Filters")
 
 if 'track_genre' in df.columns:
@@ -139,9 +127,7 @@ if num_cols:
     selected_range = st.sidebar.slider(f"Filter {col_to_filter} range", min_val, max_val, (min_val, max_val))
     df = df[(df[col_to_filter] >= selected_range[0]) & (df[col_to_filter] <= selected_range[1])]
 
-# ========================================
-# EXPLORATORY DATA ANALYSIS (EDA)
-# ========================================
+
 st.header("📊 Exploratory Data Analysis (EDA)")
 
 if len(num_cols) > 0:
@@ -164,9 +150,7 @@ if len(num_cols) > 0:
                          title=f"Scatter Plot: {selected_feature} vs {other_feature}")
         st.plotly_chart(fig, use_container_width=True)
 
-# ========================================
-# FEATURE CORRELATION COMPARISON
-# ========================================
+
 st.header("🔗 Feature Correlation Comparison")
 
 if len(num_cols) >= 2:
@@ -195,9 +179,7 @@ if len(num_cols) >= 2:
         else:
             st.warning("🔹 Weak or no correlation detected.")
 
-# ========================================
-# PCA + CLUSTERING
-# ========================================
+
 st.header("📉 PCA + KMeans Clustering")
 
 pca_cols = [c for c in ['valence', 'energy', 'danceability', 'tempo', 'loudness', 'duration_ms', 'popularity'] if c in df.columns]
@@ -215,14 +197,11 @@ if len(pca_cols) >= 2:
     fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', title="🎨 PCA Clustering Visualization")
     st.plotly_chart(fig, use_container_width=True)
 
-# ========================================
-# EXPORT
-# ========================================
+
 df['processed_by'] = "Rohan Rathi — CMSE 830 Midterm"
 csv = df.to_csv(index=False)
 st.download_button("📥 Download Cleaned CSV", data=csv, file_name="spotify_cleaned.csv", mime="text/csv")
 
-st.success("✅ Complete Dashboard — Cleaning, EDA, Correlation, and PCA Ready!")
 
 
 
