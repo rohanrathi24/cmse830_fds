@@ -185,6 +185,22 @@ if "artist" in df.columns or "artists" in df.columns:
 else:
     st.warning("No artist column found in dataset. Please ensure your dataset includes an 'artist' or 'artists' column.")
 
+
+# ========================================
+# 📈 Popularity Over the Years
+# ========================================
+if "release_year" in df.columns and "popularity" in df.columns:
+    st.subheader("📈 Popularity Trend Over the Years")
+    year_popularity = df.groupby("release_year")["popularity"].mean().dropna()
+    fig = px.line(year_popularity, 
+                  x=year_popularity.index, 
+                  y=year_popularity.values, 
+                  markers=True,
+                  title="Average Popularity by Release Year",
+                  color_discrete_sequence=["#FF69B4"])
+    st.plotly_chart(fig, use_container_width=True)
+
+
 # ========================================
 # 📊 Exploratory Data Analysis (EDA)
 # ========================================
@@ -263,15 +279,26 @@ if len(num_cols) > 0:
 st.header("📉 Simple Linear Regression")
 
 if len(num_cols) >= 2:
-    x_feat = st.selectbox("Independent variable (X)", num_cols)
-    y_feat = st.selectbox("Dependent variable (Y)", num_cols)
+    x_feat = st.selectbox("Independent variable (X)", num_cols, key="reg_x")
+    y_feat = st.selectbox("Dependent variable (Y)", num_cols, key="reg_y")
+
     model = LinearRegression()
-    model.fit(df[[x_feat]], df[y_feat])
-    r2 = model.score(df[[x_feat]], df[y_feat])
+    X = df[[x_feat]]
+    y = df[y_feat]
+    model.fit(X, y)
+    predictions = model.predict(X)
+    r2 = model.score(X, y)
+
     st.write(f"**R² Score:** {r2:.3f}")
-    sns.regplot(x=x_feat, y=y_feat, data=df, scatter_kws={"alpha": 0.5})
-    st.pyplot(plt)
-    plt.clf()
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.scatterplot(x=x_feat, y=y_feat, data=df, alpha=0.5, ax=ax)
+    sns.lineplot(x=df[x_feat], y=predictions, color="red", ax=ax)
+    ax.set_title(f"Linear Regression: {y_feat} vs {x_feat}")
+    st.pyplot(fig)
+else:
+    st.info("Need at least two numeric features for regression.")
+
 
 # ========================================
 # 📉 PCA + Clustering
