@@ -74,6 +74,41 @@ drop_thresh = st.sidebar.slider("Drop columns with > x% missing", 50, 100, 95)
 col_missing = df.isnull().mean() * 100
 df = df.drop(columns=col_missing[col_missing > drop_thresh].index)
 
+st.header("🎤 Top Artists & Songs Exploration")
+
+if "artist" in df.columns or "artists" in df.columns:
+    artist_col = "artist" if "artist" in df.columns else "artists"
+    
+    top_n = st.slider("Select number of top artists", 5, 30, 10)
+    top_artists = df[artist_col].value_counts().head(top_n)
+    
+    fig = px.bar(top_artists, 
+                 x=top_artists.values, 
+                 y=top_artists.index,
+                 orientation='h', 
+                 color=top_artists.values,
+                 color_continuous_scale="Viridis",
+                 title=f"Top {top_n} Most Frequent Artists")
+    st.plotly_chart(fig, use_container_width=True)
+    
+    selected_artist = st.selectbox("Select an artist to view their songs", top_artists.index)
+    artist_songs = df[df[artist_col] == selected_artist]
+    
+    st.write(f"🎵 Showing **{artist_songs.shape[0]}** songs for **{selected_artist}**")
+    
+    song_cols = [c for c in ["track_name", "song_name", "name", "popularity", "danceability", "energy", "tempo"] if c in df.columns]
+    if song_cols:
+        st.dataframe(
+            artist_songs[song_cols]
+            .sort_values(by="popularity" if "popularity" in song_cols else song_cols[0], ascending=False)
+            .head(20)
+        )
+    else:
+        st.dataframe(artist_songs.head(20))
+else:
+    st.warning("No artist column found in dataset. Please ensure your dataset includes an 'artist' or 'artists' column.")
+
+
 # ========================================
 # IMPUTATION
 # ========================================
@@ -121,27 +156,31 @@ for col in cat_cols:
 # ========================================
 st.header("📊 Exploratory Data Analysis (EDA)")
 
-num_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+num_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+
+# 📈 Histogram Section
+st.subheader("📈 Histogram Visualization")
 if len(num_cols) > 0:
-    selected_feature = st.selectbox("Select a feature for visualization", num_cols)
+    selected_hist = st.selectbox("Select a feature for histogram", num_cols, key="hist_feature")
+    fig = px.histogram(df, x=selected_hist, nbins=40, color_discrete_sequence=["#FF7F50"])
+    st.plotly_chart(fig, use_container_width=True)
 
-    tab1, tab2, tab3 = st.tabs(["📈 Histogram", "📦 Box Plot", "⚫ Scatter Plot"])
-    with tab1:
-        fig = px.histogram(df, x=selected_feature, nbins=40, color_discrete_sequence=["#FF7F50"],
-                           title=f"Histogram of {selected_feature}")
-        st.plotly_chart(fig, use_container_width=True)
+# 📦 Box Plot Section
+st.subheader("📦 Box Plot Visualization")
+if len(num_cols) > 0:
+    selected_box = st.selectbox("Select a feature for box plot", num_cols, key="box_feature")
+    fig = px.box(df, y=selected_box, color_discrete_sequence=["#00CC96"])
+    st.plotly_chart(fig, use_container_width=True)
 
-    with tab2:
-        fig = px.box(df, y=selected_feature, color_discrete_sequence=["#00CC96"],
-                     title=f"Box Plot of {selected_feature}")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with tab3:
-        other_feature = st.selectbox("Select another feature for scatter plot", num_cols, index=1)
-        fig = px.scatter(df, x=selected_feature, y=other_feature, color_discrete_sequence=["#1F77B4"],
-                         title=f"Scatter Plot: {selected_feature} vs {other_feature}")
-        st.plotly_chart(fig, use_container_width=True)
-
+# ⚫ Scatter Plot Section
+st.subheader("⚫ Scatter Plot Visualization")
+if len(num_cols) > 1:
+    x_scatter = st.selectbox("Select X-axis feature", num_cols, key="x_feature")
+    y_scatter = st.selectbox("Select Y-axis feature", num_cols, index=1, key="y_feature")
+    fig = px.scatter(df, x=x_scatter, y=y_scatter, color_discrete_sequence=["#1F77B4"])
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("Scatter plot requires at least two numeric features.")
 # ========================================
 # FEATURE CORRELATION COMPARISON
 # ========================================
