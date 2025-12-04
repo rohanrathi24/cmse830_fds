@@ -37,6 +37,7 @@ from plotly.subplots import make_subplots
 
 # Loading dataset
 df = pd.read_csv('https://raw.githubusercontent.com/madhuryashankar/CMSE/main/healthcare-dataset-stroke-data.csv')
+df = df.loc[:, ~df.columns.duplicated()].copy()
 
 
 # Function to replace missing values with median
