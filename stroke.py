@@ -322,14 +322,20 @@ with tab2 :
             cat_hue = st.selectbox("Choose target", categorical)
 
         if alt_x and alt_y and cat_hue:
-            fig3 = px.scatter(df, alt_x, alt_y, color=cat_hue, trendline="ols")
-            fig3.update_layout({
+
+    # prevent duplicate column error when X == Y
+    if alt_x == alt_y:
+        st.error("X and Y features must be different. Please select two different columns.")
+    
+    else:
+        fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue, trendline="ols")
+        fig3.update_layout({
             'plot_bgcolor': 'rgba(0, 0, 0, 0)',
             'paper_bgcolor': 'rgba(0, 0, 0, 0)',
-            },font=dict(
-                size=18
-                )   
-            )
+        }, font=dict(size=18))
+        
+        st.plotly_chart(fig3, use_container_width=True)
+
 
         st.write(fig3)
 
