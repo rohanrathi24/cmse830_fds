@@ -237,19 +237,19 @@ with tab2 :
 
         # Description for bar graph
         if bar_x == 'smoking_status':
-            st.markdown("**Smoking Status:** By looking at the bar graph for the 'smoking status' category, we can learn about the relationship between smoking and strokes. The graph shows different groups, like people who smoke, used to smoke, or never smoked. The height of each bar represents how many people in each group had a stroke. So, if you see a really tall bar for the 'smokers' group, it means a lot of smokers had strokes. If the 'never smoked' bar is short, it suggests that fewer non-smokers had strokes.")
+            st.markdown("*Smoking Status:* By looking at the bar graph for the 'smoking status' category, we can learn about the relationship between smoking and strokes. The graph shows different groups, like people who smoke, used to smoke, or never smoked. The height of each bar represents how many people in each group had a stroke. So, if you see a really tall bar for the 'smokers' group, it means a lot of smokers had strokes. If the 'never smoked' bar is short, it suggests that fewer non-smokers had strokes.")
         elif bar_x == 'work_type':
-            st.markdown("**Work Type:** From the bar graph of the 'Work Type' category, we can see how different types of jobs are related to strokes. The graph uses different colors to show the number of people in each job category who had a stroke. By looking at this graph, we can understand if certain jobs have a higher or lower risk of strokes. ")
+            st.markdown("*Work Type:* From the bar graph of the 'Work Type' category, we can see how different types of jobs are related to strokes. The graph uses different colors to show the number of people in each job category who had a stroke. By looking at this graph, we can understand if certain jobs have a higher or lower risk of strokes. ")
         elif bar_x == 'gender':
-            st.markdown("**Gender:**  In this graph, you'll see two bars, one for 'Male' and one for 'Female'. The height of these bars shows how many men and women in the dataset had a stroke. If one bar is taller than the other, it means more people of that gender had a stroke. This helps us understand if gender has any connection to strokes. For example, if the 'Female' bar is taller, it might mean that women in this dataset had more strokes. ")
+            st.markdown("*Gender:*  In this graph, you'll see two bars, one for 'Male' and one for 'Female'. The height of these bars shows how many men and women in the dataset had a stroke. If one bar is taller than the other, it means more people of that gender had a stroke. This helps us understand if gender has any connection to strokes. For example, if the 'Female' bar is taller, it might mean that women in this dataset had more strokes. ")
         elif bar_x == 'Residence_type':
-            st.markdown("**Residence Type:**  From the bar graph of the 'Residence Type' category, you can see two colorful bars representing two different types of residence: 'Urban' and 'Rural.' Each bar shows the number of people who had a stroke in these two types of areas. This helps us understand whether living in an urban or rural place might be connected to having a stroke. It's like looking at the numbers to see if the place where someone lives is related to their risk of having a stroke. This information can be valuable for understanding and preventing strokes.")
+            st.markdown("*Residence Type:*  From the bar graph of the 'Residence Type' category, you can see two colorful bars representing two different types of residence: 'Urban' and 'Rural.' Each bar shows the number of people who had a stroke in these two types of areas. This helps us understand whether living in an urban or rural place might be connected to having a stroke. It's like looking at the numbers to see if the place where someone lives is related to their risk of having a stroke. This information can be valuable for understanding and preventing strokes.")
         elif bar_x == 'ever_married':
-            st.markdown("**Ever Married:**   The graph will show two bars, one for people who have been married and another for those who haven't. You'll see how many people in each group had a stroke. This helps us understand if being married or not being married might affect the chances of having a stroke. It's like looking at data to find clues about how different life experiences might impact our health.")
+            st.markdown("*Ever Married:*   The graph will show two bars, one for people who have been married and another for those who haven't. You'll see how many people in each group had a stroke. This helps us understand if being married or not being married might affect the chances of having a stroke. It's like looking at data to find clues about how different life experiences might impact our health.")
         elif bar_x == 'hypertension':
-            st.markdown("**Hypertension:** In this bar graph, we analyze the relationship between hypertension and strokes. The bars represent different groups, such as individuals with and without hypertension. The height of each bar indicates the number of people in each group who had a stroke. If you observe a tall bar for the 'hypertension' group, it means a significant number of people with hypertension had strokes. Conversely, if the 'no hypertension' bar is shorter, it suggests that fewer individuals without hypertension had strokes. This information can help us understand the impact of hypertension on stroke risk.")
+            st.markdown("*Hypertension:* In this bar graph, we analyze the relationship between hypertension and strokes. The bars represent different groups, such as individuals with and without hypertension. The height of each bar indicates the number of people in each group who had a stroke. If you observe a tall bar for the 'hypertension' group, it means a significant number of people with hypertension had strokes. Conversely, if the 'no hypertension' bar is shorter, it suggests that fewer individuals without hypertension had strokes. This information can help us understand the impact of hypertension on stroke risk.")
         elif bar_x == 'heart_disease':
-            st.markdown("**Heart Disease:** This bar graph illustrates the connection between heart disease and strokes. The bars represent different categories, including individuals with and without heart disease. The height of each bar represents the number of people in each category who had a stroke. If you see a tall bar for the 'heart disease' group, it indicates that a significant number of individuals with heart disease had strokes. Conversely, a shorter bar for the 'no heart disease' category suggests that fewer individuals without heart disease had strokes. This analysis allows us to explore the relationship between heart disease and the risk of strokes.")
+            st.markdown("*Heart Disease:* This bar graph illustrates the connection between heart disease and strokes. The bars represent different categories, including individuals with and without heart disease. The height of each bar represents the number of people in each category who had a stroke. If you see a tall bar for the 'heart disease' group, it indicates that a significant number of individuals with heart disease had strokes. Conversely, a shorter bar for the 'no heart disease' category suggests that fewer individuals without heart disease had strokes. This analysis allows us to explore the relationship between heart disease and the risk of strokes.")
 
         st.markdown("Observations:")
         st.markdown("1. When we look at features like gender and residence type, they don't seem to make a big difference in predicting whether a person will have a stroke or not. The chances of having a stroke for different groups within these features are quite similar to the overall dataset.")
@@ -269,11 +269,11 @@ with tab2 :
 
         # Description for violin graph
         if violin_y == 'bmi':
-            st.markdown("**BMI (Body Mass Index):** By examining this graph, we can draw some valuable conclusions. If you notice that there's a significant difference in BMI between people who had a stroke and those who didn't, it could suggest that BMI plays a role in stroke risk. In simpler terms, it helps us see if being underweight, overweight, or having a healthy BMI might affect the likelihood of experiencing a stroke. So, if you see a big difference in the heights of the bars in the graph, it might indicate that BMI is an important factor when it comes to stroke prediction.")
+            st.markdown("*BMI (Body Mass Index):* By examining this graph, we can draw some valuable conclusions. If you notice that there's a significant difference in BMI between people who had a stroke and those who didn't, it could suggest that BMI plays a role in stroke risk. In simpler terms, it helps us see if being underweight, overweight, or having a healthy BMI might affect the likelihood of experiencing a stroke. So, if you see a big difference in the heights of the bars in the graph, it might indicate that BMI is an important factor when it comes to stroke prediction.")
         elif violin_y == 'avg_glucose_level':
-            st.markdown("**Average Glucose Level:** The graph displays how average glucose levels are distributed among individuals in the dataset who either had a stroke or did not. You can see two violins side by side, one for those who had a stroke and one for those who didn't. By looking at the shape and position of these violins, you can make inferences. For example, if the 'stroke' violin is noticeably wider at higher glucose levels, it might suggest that elevated glucose levels could be associated with a higher risk of stroke.")
+            st.markdown("*Average Glucose Level:* The graph displays how average glucose levels are distributed among individuals in the dataset who either had a stroke or did not. You can see two violins side by side, one for those who had a stroke and one for those who didn't. By looking at the shape and position of these violins, you can make inferences. For example, if the 'stroke' violin is noticeably wider at higher glucose levels, it might suggest that elevated glucose levels could be associated with a higher risk of stroke.")
         elif violin_y == 'age':
-            st.markdown("**Age:** The width of the plot shows us how ages are distributed among people who either had a stroke or did not. If the plot is wider at a certain age range, it means there are more people in that group. For example, if the plot is wider in the middle, it means more people in that age group had a stroke. By looking at the plot, we can see if there's a particular age group where strokes are more common. This helps us understand how age is related to the risk of having a stroke.")
+            st.markdown("*Age:* The width of the plot shows us how ages are distributed among people who either had a stroke or did not. If the plot is wider at a certain age range, it means there are more people in that group. For example, if the plot is wider in the middle, it means more people in that age group had a stroke. By looking at the plot, we can see if there's a particular age group where strokes are more common. This helps us understand how age is related to the risk of having a stroke.")
 
         st.markdown("Observations:")
         st.markdown("1. For younger patients, especially those aged 0-30, the chances of having a stroke are very low (less than 0.01), but there's a significant increase in the likelihood for patients aged 60 and older.")
@@ -303,11 +303,9 @@ with tab2 :
         st.markdown("Observations:")
         st.markdown("The patterns for average glucose levels and BMI look a bit like a bell curve, with a slight tilt to the right. This means there are a few higher values on the right side. Similar behavior is seen for age, where there's also a bit of spread. There isn't much distinction between genders. However, we have very few samples from other gender groups, so we won't consider them for now.")
 
-    
-    if st.checkbox('Studying relationships in stroke data'):  
+ if st.checkbox('Studying relationships in stroke data'):  
     st.subheader("Studying relationships in stroke data.")
-    st.markdown("Let's explore a new concept that can help us understand the factors related to strokes. We're going to look at something called a 'Bivariate scatterplot by diagnosis (Stroke).' This is like a special picture that shows two things at once and helps us see if there's a connection between those two things and whether someone had a stroke.")
-    st.markdown("In simpler terms, it's like using a visual chart to see how two different factors might be linked to strokes. For instance, we can use this chart to investigate whether age and having high blood pressure are connected to having a stroke. The chart uses dots to show this relationship, making it much easier for us to see and understand the connections. So, let's dive into this visual tool and uncover valuable insights about strokes and the factors involved.")
+    st.markdown("Let's explore a new concept that can help us understand the factors related to strokes...")
 
     l1, m1, r1 = st.columns((2,5,1))
 
@@ -326,11 +324,8 @@ with tab2 :
         cat_hue = st.selectbox("Choose target", categorical, key="hue_feature")
 
     if alt_x and alt_y and cat_hue:
-
-        # prevent crash if X == Y
         if alt_x == alt_y:
             st.error("X and Y features must be different. Please select two different columns.")
-
         else:
             fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue, trendline="ols")
             fig3.update_layout({
@@ -339,6 +334,10 @@ with tab2 :
             }, font=dict(size=18))
 
             st.plotly_chart(fig3, use_container_width=True)
+
+        st.write(fig3)
+        st.markdown("Observations:")
+        ...
 
     
 
@@ -796,4 +795,4 @@ with tab7 :
         st.write("Hello there! I'm Madhurya, a dedicated learner currently pursuing a Master's in Data Science. My journey is fueled by a passion for unraveling the stories hidden in data.")
         st.write("In the halls of MSU, I dive deep into the realms of Python, Data Analysis, and Machine Learning. Learning isn't just a task; it's my enthusiasm for embracing new technologies and methodologies in the dynamic field of data science.") 
         st.write("Beyond the screen, I find joy in diverse pursuits. Whether it's a fierce badminton match, the strokes of a paintbrush, the soothing chords of a guitar, or the tranquility of a hiking trail, I embrace the beauty of life beyond coding.")
-        st.write("Come, explore my web app, and join me in this exciting adventure of data exploration and analytics. Let's make technology not just a skill but a thrilling journey!")
+        st.write("Come, explore my web app, and join me in this exciting adventure of data exploration and analytics. Let's make technology not just a skill but a thrilling journey!")
