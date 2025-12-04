@@ -323,7 +323,7 @@ with tab2 :
 
         if alt_x and alt_y and cat_hue:
 
-                    numerical = df.select_dtypes(include=['float64']).columns;
+        numerical = df.select_dtypes(include=['float64']).columns;
         categorical = df.select_dtypes(include=['object']).columns;
         with col3:
             alt_x = st.selectbox("Select a feature for (X)?", numerical)
@@ -333,7 +333,7 @@ with tab2 :
             cat_hue = st.selectbox("Choose target", categorical)
 
         if alt_x and alt_y and cat_hue:
-                         numerical = df.select_dtypes(include=['float64']).columns;
+        numerical = df.select_dtypes(include=['float64']).columns;
         categorical = df.select_dtypes(include=['object']).columns;
         with col3:
             alt_x = st.selectbox("Select a feature for (X)?", numerical)
