@@ -303,60 +303,42 @@ with tab2 :
         st.markdown("Observations:")
         st.markdown("The patterns for average glucose levels and BMI look a bit like a bell curve, with a slight tilt to the right. This means there are a few higher values on the right side. Similar behavior is seen for age, where there's also a bit of spread. There isn't much distinction between genders. However, we have very few samples from other gender groups, so we won't consider them for now.")
 
+    
     if st.checkbox('Studying relationships in stroke data'):  
-        st.subheader("Studying relationships in stroke data.")
-        st.markdown("Let's explore a new concept that can help us understand the factors related to strokes. We're going to look at something called a 'Bivariate scatterplot by diagnosis (Stroke).' This is like a special picture that shows two things at once and helps us see if there's a connection between those two things and whether someone had a stroke.")
-        st.markdown("In simpler terms, it's like using a visual chart to see how two different factors might be linked to strokes. For instance, we can use this chart to investigate whether age and having high blood pressure are connected to having a stroke. The chart uses dots to show this relationship, making it much easier for us to see and understand the connections. So, let's dive into this visual tool and uncover valuable insights about strokes and the factors involved.")
-        
-        l1, m1, r1 = st.columns((2,5,1))
+    st.subheader("Studying relationships in stroke data.")
+    st.markdown("Let's explore a new concept that can help us understand the factors related to strokes. We're going to look at something called a 'Bivariate scatterplot by diagnosis (Stroke).' This is like a special picture that shows two things at once and helps us see if there's a connection between those two things and whether someone had a stroke.")
+    st.markdown("In simpler terms, it's like using a visual chart to see how two different factors might be linked to strokes. For instance, we can use this chart to investigate whether age and having high blood pressure are connected to having a stroke. The chart uses dots to show this relationship, making it much easier for us to see and understand the connections. So, let's dive into this visual tool and uncover valuable insights about strokes and the factors involved.")
 
-        col3, col4, col5 = st.columns(3,gap='large')
+    l1, m1, r1 = st.columns((2,5,1))
 
-        numerical = df.select_dtypes(include=['float64']).columns;
-        categorical = df.select_dtypes(include=['object']).columns;
-        with col3:
-            alt_x = st.selectbox("Select a feature for (X)?", numerical)
-        with col4:
-            alt_y = st.selectbox("Select a feature for (Y) ?", numerical)
-        with col5:
-            cat_hue = st.selectbox("Choose target", categorical)
+    col3, col4, col5 = st.columns(3, gap='large')
 
-        if alt_x and alt_y and cat_hue:
+    numerical = df.select_dtypes(include=['float64']).columns
+    categorical = df.select_dtypes(include=['object']).columns
 
-        numerical = df.select_dtypes(include=['float64']).columns;
-        categorical = df.select_dtypes(include=['object']).columns;
-        with col3:
-            alt_x = st.selectbox("Select a feature for (X)?", numerical)
-        with col4:
-            alt_y = st.selectbox("Select a feature for (Y) ?", numerical)
-        with col5:
-            cat_hue = st.selectbox("Choose target", categorical)
+    with col3:
+        alt_x = st.selectbox("Select a feature for (X)?", numerical, key="x_feature")
 
-        if alt_x and alt_y and cat_hue:
-        numerical = df.select_dtypes(include=['float64']).columns;
-        categorical = df.select_dtypes(include=['object']).columns;
-        with col3:
-            alt_x = st.selectbox("Select a feature for (X)?", numerical)
-        with col4:
-            alt_y = st.selectbox("Select a feature for (Y) ?", numerical)
-        with col5:
-            cat_hue = st.selectbox("Choose target", categorical)
+    with col4:
+        alt_y = st.selectbox("Select a feature for (Y)?", numerical, key="y_feature")
 
-        if alt_x and alt_y and cat_hue:
-            
+    with col5:
+        cat_hue = st.selectbox("Choose target", categorical, key="hue_feature")
 
-            # prevent crash if X == Y
-            if alt_x == alt_y:
-                st.error("X and Y features must be different. Please select two different columns.")
+    if alt_x and alt_y and cat_hue:
 
-            else:
-                fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue, trendline="ols")
-                fig3.update_layout({
-                    'plot_bgcolor': 'rgba(0, 0, 0, 0)',
-                    'paper_bgcolor': 'rgba(0, 0, 0, 0)',
-                }, font=dict(size=18))
+        # prevent crash if X == Y
+        if alt_x == alt_y:
+            st.error("X and Y features must be different. Please select two different columns.")
 
-                st.plotly_chart(fig3, use_container_width=True)
+        else:
+            fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue, trendline="ols")
+            fig3.update_layout({
+                'plot_bgcolor': 'rgba(0, 0, 0, 0)',
+                'paper_bgcolor': 'rgba(0, 0, 0, 0)',
+            }, font=dict(size=18))
+
+            st.plotly_chart(fig3, use_container_width=True)
 
     
 
