@@ -34,8 +34,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Keep this to avoid unwanted warning on the wen app
-st.set_option('deprecation.showPyplotGlobalUse', False)
 
 # Loading dataset
 df = pd.read_csv('https://raw.githubusercontent.com/madhuryashankar/CMSE/main/healthcare-dataset-stroke-data.csv')
