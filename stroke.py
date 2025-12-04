@@ -303,9 +303,9 @@ with tab2 :
         st.markdown("Observations:")
         st.markdown("The patterns for average glucose levels and BMI look a bit like a bell curve, with a slight tilt to the right. This means there are a few higher values on the right side. Similar behavior is seen for age, where there's also a bit of spread. There isn't much distinction between genders. However, we have very few samples from other gender groups, so we won't consider them for now.")
 
- if st.checkbox('Studying relationships in stroke data'):  
-    st.subheader("Studying relationships in stroke data.")
-    st.markdown("Let's explore a new concept that can help us understand the factors related to strokes...")
+   if st.checkbox('Studying relationships in stroke data'):  
+     st.subheader("Studying relationships in stroke data.")
+     st.markdown("Let's explore a new concept that can help us understand the factors related to strokes...")
 
     l1, m1, r1 = st.columns((2,5,1))
 
