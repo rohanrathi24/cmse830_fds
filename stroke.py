@@ -39,16 +39,6 @@ from plotly.subplots import make_subplots
 df = pd.read_csv('https://raw.githubusercontent.com/madhuryashankar/CMSE/main/healthcare-dataset-stroke-data.csv')
 
 
-# --- Check for duplicate column names ---
-st.write("Columns in df:", df.columns.tolist())
-
-dupes = df.columns[df.columns.duplicated()].tolist()
-if dupes:
-    st.error(f"Duplicate column names found: {dupes}")
-    df = df.loc[:, ~df.columns.duplicated()].copy()
-    st.success("Duplicate columns removed automatically!")
-
-
 
 # Function to replace missing values with median
 def replace_missing_with_median(df):
