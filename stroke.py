@@ -1095,18 +1095,12 @@ with tab6:
 
 # ------------------------- TAB 7 -------------------------------
 with tab7:
-    image_path = "bio.jpg"
-    try:
-        image = open(image_path, "rb").read()
-        st.image(image, width=300)
-    except FileNotFoundError:
-        st.write("Bio image not found.")
 
     text_column = st.columns(2)[0]
 
     with text_column:
         st.write(
-            "Hello there! I'm Madhurya, a dedicated learner currently pursuing a Master's in Data Science. "
+            "Hello there! I'm Rohan, a dedicated learner currently pursuing a Master's in Data Science. "
             "My journey is fueled by a passion for unraveling the stories hidden in data."
         )
         st.write(
