@@ -49,7 +49,7 @@ st.set_page_config(
 
 # ------------------------- LOAD DATA ---------------------------
 df = pd.read_csv(
-    "https://raw.githubusercontent.com/madhuryashankar/CMSE/main/healthcare-dataset-stroke-data.csv"
+    "https://raw.githubusercontent.com/rohanrathi24/cmse830_fds/main/healthcare-dataset-stroke-data.csv"
 )
 
 
