@@ -1,7 +1,40 @@
 # Predicting Strokes: Insights from the Data
 
-Stroke Prediction plays a pivotal role in predicting the likelihood of an individual experiencing a stroke. Strokes, as the second leading cause of death globally, accounting for approximately 11% of total deaths according to the World Health Organization (WHO), represent a critical healthcare challenge.
+This project analyzes the Stroke Prediction Dataset and builds machine learning models to estimate the likelihood of an individual experiencing a stroke. The work includes exploratory data analysis, data preprocessing, model development, model evaluation, and a Streamlit-based web application for interactive predictions.
 
-The 'Stroke Prediction Dataset' was sourced from Kaggle which can be accessed at: Kaggle Dataset Link and emerged as the most suitable choice due to its alignment with the primary focus of stroke prediction and prevention. This dataset encompasses a wide array of attributes, including demographic information, medical history, and lifestyle factors.
+##Overview
 
-This dataset comprises 5110 records and 12 columns featuring both numerical and categorical data. It includes critical information such as unique identifiers, gender, age, medical conditions (hypertension and heart disease), marital status, occupation, residence type, glucose levels, BMI, smoking status, and stroke occurrences. Its primary objective is to unveil relationships between these factors and the likelihood of a stroke.
+The goal of this project is to understand patterns related to stroke occurrence and create an effective prediction system that uses demographic, medical, and lifestyle factors. The project combines data analysis and machine learning to support early identification of individuals at higher risk of stroke.
+
+###Exploratory Data Analysis
+  - Key observations from the EDA include:
+  - Stroke occurrence increases notably with age.
+  - Higher average glucose levels are associated with greater stroke risk.
+  - Hypertension and heart disease show meaningful relationships with stroke likelihood.
+  - BMI does not strongly differentiate stroke and non-stroke groups.
+  - Gender and residence type have minimal effect on prediction.
+  - Visualizations created include bar charts, violin plots, histograms, scatterplots, correlation matrices, and 3D scatterplots.
+
+###Modeling Approach
+
+Multiple models were trained and compared:
+  - XGBoost (baseline and hyperparameter-tuned)
+  - Random Forest
+  - Decision Tree
+  - Logistic Regression
+  - Gaussian Naive Bayes
+  - Support Vector Machine
+  - Models were evaluated using accuracy, precision, recall, F1 score, ROC curves, PR curves, and confusion matrices.
+  - The best-performing model was the hyperparameter-tuned XGBoost classifier.
+
+###Streamlit Application
+A web application was developed to allow users to:
+  - Explore the dataset interactively
+  - Visualize relationships between features
+  - Compare machine learning models
+  - Enter custom user inputs to obtain stroke predictions and probability scores
+  - The application uses the tuned XGBoost model for predictions.
+
+###Conclusion
+
+The analysis shows that age, glucose level, hypertension, and heart disease are the most influential factors in predicting stroke. After testing several models, the tuned XGBoost classifier provided the strongest performance. The final Streamlit application integrates data analysis and predictive modeling into a single interactive system for stroke risk assessment.
