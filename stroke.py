@@ -997,7 +997,7 @@ with tab6:
     st.markdown(
         "1. The app addresses an imbalanced target variable, with a majority of instances indicating no stroke."
     )
-    st.markmarkdown(
+    st.markdown(
         "2. Categorical variables like gender, hypertension, heart_disease, and others show varied distributions."
     )
     st.markdown(
