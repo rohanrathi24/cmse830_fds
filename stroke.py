@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import hiplot as hip
 import time as timer
-import joblib  # not strictly needed now but kept in case you use it elsewhere
+import joblib  # kept in case you use it elsewhere
 from PIL import Image
 
 from sklearn import metrics
@@ -48,9 +48,8 @@ st.set_page_config(
 )
 
 # ------------------------- LOAD DATA ---------------------------
-df = pd.read_csv(
-    "https://raw.githubusercontent.com/rohanrathi24/cmse830_fds/main/healthcare-dataset-stroke-data.csv"
-)
+# Use the main CSV from your GitHub repo
+df = pd.read_csv("healthcare-dataset-stroke-data.csv")
 
 
 # Function to replace missing values with median
@@ -142,12 +141,6 @@ def create_bar_plot(df_raw, categorical_feature):
 # Function to create violin plots of numerical features by diagnosis
 def create_violin_plot(df_raw, numerical_feature):
     fig = px.violin(df_raw, x="stroke", y=numerical_feature, box=True, hover_data=df_raw.columns)
-    return fig
-
-
-# Function to create scatter plots with correlation analysis
-def create_scatterplot_with_correlation(df_raw, x_feature, y_feature, hue_feature):
-    fig = px.scatter(df_raw, x=x_feature, y=y_feature, color=hue_feature, trendline="ols")
     return fig
 
 
@@ -349,9 +342,6 @@ with tab2:
 
     st.sidebar.subheader("Use filters to uncover insights")
 
-    # NOTE: df is already label-encoded now; but for visualizations,
-    # this is fine because values are still meaningful categories encoded as ints.
-
     selected_work_type = st.sidebar.selectbox("Work Type", df["work_type"].unique())
     selected_smoking_status = st.sidebar.selectbox(
         "Smoking Status", df["smoking_status"].unique()
@@ -375,8 +365,8 @@ with tab2:
         st.subheader("Examining stroke trends by lifestyle category.")
         st.markdown(
             "You can pick different categories like gender, marital status, type of work, where you live, "
-            "hypertension, heart disease and smoking habits. It's a bit like a colorful bar chart you might see "
-            "in a magazine. This chart helps you see how many people in each category had a stroke."
+            "hypertension, heart disease and smoking habits. This chart helps you see how many people in each "
+            "category had a stroke."
         )
 
         categorical_variables = [
@@ -392,44 +382,15 @@ with tab2:
         bar_plot = create_bar_plot(df, bar_x)
         st.plotly_chart(bar_plot)
 
-        if bar_x == "smoking_status":
-            st.markdown(
-                "**Smoking Status:** By looking at the bar graph for the 'smoking status' category, we can learn about the relationship between smoking and strokes."
-            )
-        elif bar_x == "work_type":
-            st.markdown(
-                "**Work Type:** From the bar graph of the 'Work Type' category, we can see how different types of jobs are related to strokes."
-            )
-        elif bar_x == "gender":
-            st.markdown(
-                "**Gender:**  In this graph, you'll see two bars, one for 'Male' and one for 'Female'."
-            )
-        elif bar_x == "Residence_type":
-            st.markdown(
-                "**Residence Type:**  From the bar graph of the 'Residence Type' category, you can see two colorful bars representing 'Urban' and 'Rural.'"
-            )
-        elif bar_x == "ever_married":
-            st.markdown(
-                "**Ever Married:**   The graph will show two bars, one for people who have been married and another for those who haven't."
-            )
-        elif bar_x == "hypertension":
-            st.markdown(
-                "**Hypertension:** In this bar graph, we analyze the relationship between hypertension and strokes."
-            )
-        elif bar_x == "heart_disease":
-            st.markdown(
-                "**Heart Disease:** This bar graph illustrates the connection between heart disease and strokes."
-            )
-
         st.markdown("Observations:")
         st.markdown(
-            "1. When we look at features like gender and residence type, they don't seem to make a big difference in predicting whether a person will have a stroke or not."
+            "1. Features like gender and residence type do not show strong differences in stroke probability."
         )
         st.markdown(
-            "2. Features like marriage status, work type, and smoking habits show noticeable differences in stroke probabilities."
+            "2. Marriage status, work type, and smoking habits show more noticeable differences."
         )
         st.markdown(
-            "3. The majority of patients do not have hypertension or heart disease."
+            "3. Most patients do not have hypertension or heart disease."
         )
 
     if st.checkbox("Examining stroke trends with human charcateristics"):
@@ -437,7 +398,7 @@ with tab2:
         st.subheader("Examining stroke trends with human charcateristics")
         st.markdown(
             "You can pick different factors like age, average glucose level, and BMI. "
-            "The violin graph here shows a picture of how these numbers are spread out among people who had a stroke and people who didn't."
+            "The violin graph shows how these values are distributed among people with and without stroke."
         )
 
         violin_y = st.selectbox(
@@ -446,35 +407,21 @@ with tab2:
         violin_plot = create_violin_plot(df, violin_y)
         st.plotly_chart(violin_plot)
 
-        if violin_y == "bmi":
-            st.markdown(
-                "**BMI (Body Mass Index):** By examining this graph, we can draw some valuable conclusions."
-            )
-        elif violin_y == "avg_glucose_level":
-            st.markdown(
-                "**Average Glucose Level:** The graph displays how average glucose levels are distributed among individuals."
-            )
-        elif violin_y == "age":
-            st.markdown(
-                "**Age:** The width of the plot shows us how ages are distributed among people who either had a stroke or did not."
-            )
-
         st.markdown("Observations:")
         st.markdown(
-            "1. For younger patients (0–30), the chances of having a stroke are very low, with a significant increase for patients aged 60 and older."
+            "1. Stroke probability increases with age, especially after about 60 years."
         )
         st.markdown(
-            "2. Patients with BMI between 20–50 have stroke probabilities similar to the overall dataset."
+            "2. Higher glucose levels are associated with greater stroke risk."
         )
         st.markdown(
-            "3. Higher average glucose levels are associated with a significantly higher stroke probability."
+            "3. BMI is less clearly separated between stroke and non-stroke groups."
         )
 
     if st.checkbox("Histogram"):
         st.header("Histogram")
         st.write(
-            "Imagine the bars as groups, each with a different color. These bars show how often something happened, "
-            "like a stroke, and how it's related to something else, like age."
+            "These histograms show the distribution of continuous features split by gender."
         )
         st.subheader("Select a feature for the histogram:")
         selected_feature = st.selectbox(
@@ -492,15 +439,10 @@ with tab2:
         fig.update_layout(height=700, width=900)
         st.plotly_chart(fig)
 
-        st.markdown("Observations:")
-        st.markdown(
-            "The patterns for average glucose levels and BMI look a bit like a bell curve with a slight tilt to the right."
-        )
-
     if st.checkbox("Studying relationships in stroke data"):
         st.subheader("Studying relationships in stroke data.")
         st.markdown(
-            "We look at a 'Bivariate scatterplot by diagnosis (Stroke)' to see if two features are connected to stroke occurrence."
+            "We use bivariate scatterplots to explore how two numerical features relate to each other and to stroke-related categories."
         )
 
         col3, col4, col5 = st.columns(3, gap="large")
@@ -515,8 +457,15 @@ with tab2:
         with col5:
             cat_hue = st.selectbox("Choose target", categorical)
 
+        fig3 = None
         if alt_x and alt_y and cat_hue:
-            fig3 = px.scatter(df, alt_x, alt_y, color=cat_hue, trendline="ols")
+            # Fix: avoid trendline when X and Y are the same
+            if alt_x == alt_y:
+                st.info("X and Y are the same feature. Showing scatterplot without regression line.")
+                fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue)
+            else:
+                fig3 = px.scatter(df, x=alt_x, y=alt_y, color=cat_hue, trendline="ols")
+
             fig3.update_layout(
                 {
                     "plot_bgcolor": "rgba(0, 0, 0, 0)",
@@ -534,7 +483,7 @@ with tab2:
     if st.checkbox("Correlation"):
         st.subheader("Correlation")
         st.markdown(
-            "Correlation means looking at how two things are connected or related to each other."
+            "Correlation helps show how strongly numerical features move together."
         )
 
         with st.form("key2"):
@@ -553,9 +502,6 @@ with tab2:
 
         if corr_mat:
             st.subheader("Correlation Matrix Heatmap")
-            st.markdown(
-                "The correlation matrix heatmap provides an overview of the relationships between numerical features."
-            )
 
             fig_corr = px.imshow(
                 correlation_data,
@@ -565,15 +511,10 @@ with tab2:
             fig_corr.update_layout(width=800, height=600)
             st.plotly_chart(fig_corr)
 
-            st.markdown("Observations:")
-            st.markdown(
-                "The heatmap reveals faint links between average glucose levels and age, as well as BMI and age."
-            )
-
     if st.checkbox("3D Scatter Plot"):
         st.header("3D Scatter Plot")
         st.write(
-            "The 3D scatter plot provides a view of how age, avg_glucose_level, and bmi interact with each other with respect to stroke status."
+            "The 3D scatter plot shows how age, avg_glucose_level, and bmi interact with stroke status."
         )
 
         fig = px.scatter_3d(
@@ -600,14 +541,6 @@ with tab2:
             title="Age, Average Glucose Level, BMI vs. Stroke",
         )
         st.plotly_chart(fig)
-
-        st.markdown("Observations:")
-        st.markdown(
-            "1. Stroke patients (red points) tend to be older and have higher glucose levels."
-        )
-        st.markdown(
-            "2. BMI does not appear to clearly differentiate stroke from non-stroke cases."
-        )
 
 # ------------------------- TAB 3 -------------------------------
 with tab3:
@@ -964,11 +897,11 @@ with tab5:
 
     if st.button("Submit"):
         # Encoding categorical attributes to values
-        gender = 1 if gender == "Male" else 0
-        age = float(age)
-        hypertension = 1 if hypertension == "Yes" else 0
-        ever_married = 1 if ever_married == "Yes" else 0
-        heart_disease = 1 if heart_disease == "Yes" else 0
+        gender_val = 1 if gender == "Male" else 0
+        age_val = float(age)
+        hypertension_val = 1 if hypertension == "Yes" else 0
+        ever_married_val = 1 if ever_married == "Yes" else 0
+        heart_disease_val = 1 if heart_disease == "Yes" else 0
 
         if work_type == "Government Job":
             work_type_val = 0
@@ -981,11 +914,11 @@ with tab5:
         elif work_type == "Children":
             work_type_val = 4
         else:
-            work_type_val = 2  # default
+            work_type_val = 2
 
         Residence_type_val = 1 if Residence_type == "Urban" else 0
-        avg_glucose_level = float(avg_glucose_level)
-        bmi = float(bmi)
+        avg_glucose_level_val = float(avg_glucose_level)
+        bmi_val = float(bmi)
 
         if smoking_status == "Unknown":
             smoking_status_val = 0
@@ -1001,15 +934,15 @@ with tab5:
         # Creating nparray of User Inputs
         user_input = np.array(
             [
-                gender,
-                age,
-                hypertension,
-                heart_disease,
-                ever_married,
+                gender_val,
+                age_val,
+                hypertension_val,
+                heart_disease_val,
+                ever_married_val,
                 work_type_val,
                 Residence_type_val,
-                avg_glucose_level,
-                bmi,
+                avg_glucose_level_val,
+                bmi_val,
                 smoking_status_val,
             ]
         ).reshape(1, -1)
@@ -1064,7 +997,7 @@ with tab6:
     st.markdown(
         "1. The app addresses an imbalanced target variable, with a majority of instances indicating no stroke."
     )
-    st.markdown(
+    st.markmarkdown(
         "2. Categorical variables like gender, hypertension, heart_disease, and others show varied distributions."
     )
     st.markdown(
@@ -1095,12 +1028,18 @@ with tab6:
 
 # ------------------------- TAB 7 -------------------------------
 with tab7:
+    image_path = "bio.jpg"
+    try:
+        image = open(image_path, "rb").read()
+        st.image(image, width=300)
+    except FileNotFoundError:
+        st.write("Bio image not found.")
 
     text_column = st.columns(2)[0]
 
     with text_column:
         st.write(
-            "Hello there! I'm Rohan, a dedicated learner currently pursuing a Master's in Data Science. "
+            "Hello there! I'm Madhurya, a dedicated learner currently pursuing a Master's in Data Science. "
             "My journey is fueled by a passion for unraveling the stories hidden in data."
         )
         st.write(
@@ -1108,10 +1047,9 @@ with tab7:
             "Learning isn't just a task; it's my enthusiasm for embracing new technologies and methodologies in the dynamic field of data science."
         )
         st.write(
-            "Beyond the screen, I find joy in diverse pursuits. Whether it's a fierce badminton match, the strokes of a paintbrush, "
-            "the soothing chords of a guitar, or the tranquility of a hiking trail, I embrace the beauty of life beyond coding."
+            "Beyond the screen, I find joy in diverse pursuits. Whether it's a badminton match, painting, "
+            "playing guitar, or hiking, I embrace the beauty of life beyond coding."
         )
         st.write(
-            "Come, explore my web app, and join me in this exciting adventure of data exploration and analytics. "
-            "Let's make technology not just a skill but a thrilling journey!"
+            "Come, explore my web app, and join me in this adventure of data exploration and analytics."
         )
