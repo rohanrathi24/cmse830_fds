@@ -10,7 +10,48 @@ import joblib  # kept in case you use it elsewhere
 from PIL import Image
 
 from sklearn import metrics
-from imblearn.over_sampling import SMOTE
+
+# --- Minimal fix: try imblearn.SMOTE; if unavailable, use a small local fallback with same API ---
+try:
+    from imblearn.over_sampling import SMOTE  # real SMOTE when available
+except Exception:
+    from sklearn.utils import resample
+
+    class SMOTE:
+        """Fallback oversampler that mimics imblearn.SMOTE.fit_resample signature.
+        Why: Avoid ImportError in environments without imblearn.
+        """
+        def __init__(self, sampling_strategy="minority", random_state=42):
+            self.sampling_strategy = sampling_strategy
+            self.random_state = random_state
+
+        def fit_resample(self, X, y):
+            X_df = X if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+            y_sr = y if isinstance(y, pd.Series) else pd.Series(y, name="__y__")
+            df = X_df.copy()
+            df["__y__"] = y_sr.values
+            counts = df["__y__"].value_counts()
+            if len(counts) < 2:
+                return X, y
+            maj = counts.idxmax()
+            minc = counts.idxmin()
+            n = counts.max()
+            df_min = df[df["__y__"] == minc]
+            df_maj = df[df["__y__"] == maj]
+            df_min_up = resample(
+                df_min, replace=True, n_samples=n, random_state=self.random_state
+            )
+            up = pd.concat([df_maj, df_min_up], axis=0).sample(
+                frac=1, random_state=self.random_state
+            ).reset_index(drop=True)
+            X_up = up.drop(columns="__y__")
+            y_up = up["__y__"]
+            # Return same types as input
+            if isinstance(X, pd.DataFrame):
+                return X_up, y_up
+            return X_up.values, y_up.values
+# --- end minimal fix ---
+
 from sklearn.metrics import (
     roc_curve,
     precision_recall_curve,
@@ -1048,3 +1089,4 @@ with tab7:
         st.write(
             "Come, explore my web app, and join me in this adventure of data exploration and analytics."
         )
+
